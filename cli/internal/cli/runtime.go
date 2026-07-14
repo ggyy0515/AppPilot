@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -24,17 +25,18 @@ type DeviceDiscoverer interface {
 }
 
 type Runtime struct {
-	root       *cobra.Command
-	load       func(context.Context, config.LoadOptions) (config.Config, error)
-	devices    DeviceDiscoverer
-	newUSB     func() transport.DeviceTransport
-	newTCP     func(string) (transport.DeviceTransport, error)
-	emitter    *contract.Emitter
-	stdout     io.Writer
-	now        func() time.Time
-	started    time.Time
-	workingDir string
-	userHome   string
+	root           *cobra.Command
+	load           func(context.Context, config.LoadOptions) (config.Config, error)
+	devices        DeviceDiscoverer
+	newUSB         func() transport.DeviceTransport
+	newTCP         func(string) (transport.DeviceTransport, error)
+	emitter        *contract.Emitter
+	stdout         io.Writer
+	now            func() time.Time
+	started        time.Time
+	workingDir     string
+	userHome       string
+	executablePath string
 
 	loadOnce sync.Once
 	loaded   config.Config
@@ -66,11 +68,19 @@ func newRuntime(root *cobra.Command, deps Dependencies) *Runtime {
 	if now == nil {
 		now = time.Now
 	}
+	executablePath := deps.ExecutablePath
+	if executablePath == "" {
+		executablePath, _ = os.Executable()
+	}
+	userHome := deps.UserHome
+	if userHome == "" {
+		userHome, _ = os.UserHomeDir()
+	}
 	return &Runtime{
 		root: root, load: loader, devices: discoverer, newUSB: newUSB, newTCP: newTCP,
 		emitter: contract.NewEmitter(stdout), now: now, started: now(),
 		stdout:     stdout,
-		workingDir: deps.WorkingDir, userHome: deps.UserHome,
+		workingDir: deps.WorkingDir, userHome: userHome, executablePath: executablePath,
 	}
 }
 

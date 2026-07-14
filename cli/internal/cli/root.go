@@ -17,16 +17,17 @@ import (
 )
 
 type Dependencies struct {
-	Version    string
-	Stdout     io.Writer
-	Stderr     io.Writer
-	LoadConfig func(context.Context, config.LoadOptions) (config.Config, error)
-	Devices    DeviceDiscoverer
-	NewUSB     func() transport.DeviceTransport
-	NewTCP     func(string) (transport.DeviceTransport, error)
-	Now        func() time.Time
-	WorkingDir string
-	UserHome   string
+	Version        string
+	Stdout         io.Writer
+	Stderr         io.Writer
+	LoadConfig     func(context.Context, config.LoadOptions) (config.Config, error)
+	Devices        DeviceDiscoverer
+	NewUSB         func() transport.DeviceTransport
+	NewTCP         func(string) (transport.DeviceTransport, error)
+	Now            func() time.Time
+	WorkingDir     string
+	UserHome       string
+	ExecutablePath string
 }
 
 func NewRoot(deps Dependencies) *cobra.Command {
@@ -54,6 +55,7 @@ func NewRoot(deps Dependencies) *cobra.Command {
 		newStateCommand(runtime),
 		newScreenshotCommand(runtime),
 		newRecordingCommand(runtime),
+		newInitCommand(runtime),
 	)
 	return cmd
 }

@@ -15,7 +15,7 @@ type healthData struct {
 
 func newAppCommand(rt *Runtime) *cobra.Command {
 	command := &cobra.Command{Use: "app", Short: "Inspect the opted-in debug App"}
-	command.AddCommand(newAppProbe(rt))
+	command.AddCommand(newAppProbe(rt), newAppScaffold(rt))
 	return command
 }
 
