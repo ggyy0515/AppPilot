@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yangy003/ios-debug-system/cli/internal/config"
 	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ios-debug-system/cli/internal/doctor"
 	"github.com/yangy003/ios-debug-system/cli/internal/transport"
 )
 
@@ -28,6 +29,7 @@ type Dependencies struct {
 	WorkingDir     string
 	UserHome       string
 	ExecutablePath string
+	Doctor         doctor.Dependencies
 }
 
 func NewRoot(deps Dependencies) *cobra.Command {
@@ -56,6 +58,7 @@ func NewRoot(deps Dependencies) *cobra.Command {
 		newScreenshotCommand(runtime),
 		newRecordingCommand(runtime),
 		newInitCommand(runtime),
+		newDoctorCommand(runtime, deps.Doctor, deps.Version),
 	)
 	return cmd
 }
@@ -93,6 +96,10 @@ func Execute(args []string, stdout, stderr io.Writer, deps Dependencies) int {
 	if isPortError(err) {
 		stable = contract.NewWithHint(contract.ConfigInvalid, err, "Use a port from 1 through 65535.")
 	}
+	var reported *reportedCommandError
+	if errors.As(err, &reported) {
+		return contract.ExitCode(stable)
+	}
 	if hasJSONFlag(args) {
 		_ = emitter.Failure(stable)
 	} else {
@@ -100,6 +107,11 @@ func Execute(args []string, stdout, stderr io.Writer, deps Dependencies) int {
 	}
 	return contract.ExitCode(stable)
 }
+
+type reportedCommandError struct{ err error }
+
+func (e *reportedCommandError) Error() string { return e.err.Error() }
+func (e *reportedCommandError) Unwrap() error { return e.err }
 
 func stableCommandError(err error) *contract.Error {
 	var stable *contract.Error
