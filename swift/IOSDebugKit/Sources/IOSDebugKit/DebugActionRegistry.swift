@@ -64,7 +64,7 @@ public final class DebugActionRegistry {
             options: .regularExpression
         ) != nil else {
             throw ProtocolError(
-                code: "config_invalid",
+                code: AppErrorCode.configInvalid.rawValue,
                 message: "Action identifier is invalid.",
                 hint: "Use a stable dot-separated identifier such as header.settings."
             )
@@ -107,14 +107,14 @@ public final class DebugActionRegistry {
     public func activate(identifier: String) async throws -> UInt64 {
         guard let entry = entries[identifier] else {
             throw ProtocolError(
-                code: "action_not_found",
+                code: AppErrorCode.actionNotFound.rawValue,
                 message: "Action was not found.",
                 hint: "Run actions list and retry; latest registration generation is \(generation)."
             )
         }
         guard entry.isEnabled() else {
             throw ProtocolError(
-                code: "action_disabled",
+                code: AppErrorCode.actionDisabled.rawValue,
                 message: "Action is disabled.",
                 hint: "Wait for the App state to enable the action, then list actions again; latest registration generation is \(generation)."
             )
@@ -124,7 +124,7 @@ public final class DebugActionRegistry {
             try await entry.perform()
         } catch {
             throw ProtocolError(
-                code: "action_failed",
+                code: AppErrorCode.actionFailed.rawValue,
                 message: "Action failed.",
                 hint: "Inspect the App state and Debug logs, then retry."
             )

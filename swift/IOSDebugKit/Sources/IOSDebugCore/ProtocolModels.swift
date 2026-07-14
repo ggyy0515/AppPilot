@@ -10,6 +10,24 @@ public enum IOSDebugProtocol {
     public static let maximumMP4Bytes = 500 * 1024 * 1024
 }
 
+public enum AppErrorCode: String, CaseIterable, Codable, Sendable {
+    case configInvalid = "config_invalid"
+    case appNotReachable = "app_not_reachable"
+    case requestTimeout = "request_timeout"
+    case protocolMismatch = "protocol_mismatch"
+    case authRequired = "auth_required"
+    case authFailed = "auth_failed"
+    case actionNotFound = "action_not_found"
+    case actionDisabled = "action_disabled"
+    case actionFailed = "action_failed"
+    case stateEncodingFailed = "state_encoding_failed"
+    case screenshotFailed = "screenshot_failed"
+    case recordingNotAvailable = "recording_not_available"
+    case recordingInvalidState = "recording_invalid_state"
+    case recordingPermissionTimeout = "recording_permission_timeout"
+    case artifactTooLarge = "artifact_too_large"
+}
+
 public struct ProtocolError: Error, Codable, Sendable, Equatable {
     public let code: String
     public let message: String

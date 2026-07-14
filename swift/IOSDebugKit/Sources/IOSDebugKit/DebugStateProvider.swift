@@ -31,7 +31,7 @@ import IOSDebugCore
             return (value, data)
         } catch {
             throw ProtocolError(
-                code: "state_encoding_failed",
+                code: AppErrorCode.stateEncodingFailed.rawValue,
                 message: "App state could not be encoded.",
                 hint: "Verify the DebugStateProvider returns finite, JSON-encodable values under 4 MiB."
             )

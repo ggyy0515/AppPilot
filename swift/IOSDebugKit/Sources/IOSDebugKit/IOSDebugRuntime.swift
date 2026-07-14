@@ -16,21 +16,21 @@ import UIKit
         ) throws {
             guard port > 0 else {
                 throw ProtocolError(
-                    code: "config_invalid",
+                    code: AppErrorCode.configInvalid.rawValue,
                     message: "Debug port is invalid.",
                     hint: "Use a port from 1 through 65535; the default is 9876."
                 )
             }
             if let bearerToken, bearerToken.isEmpty {
                 throw ProtocolError(
-                    code: "config_invalid",
+                    code: AppErrorCode.configInvalid.rawValue,
                     message: "Bearer token is empty.",
                     hint: "Unset IOS_DEBUG_TOKEN or provide a nonempty value."
                 )
             }
             guard maximumRecordingDuration > .zero, maximumRecordingDuration <= .seconds(600) else {
                 throw ProtocolError(
-                    code: "config_invalid",
+                    code: AppErrorCode.configInvalid.rawValue,
                     message: "Recording duration is outside the supported range.",
                     hint: "Choose a maximum duration from 1 through 600 seconds."
                 )
@@ -246,13 +246,13 @@ private enum RouteRegistrar {
                 let snapshot = await context.actionSnapshot()
                 return try success(JSONValue.encode(snapshot), requestID: requestID)
             } catch {
-                return failure(.init(code: "action_failed", message: "Actions could not be listed.", hint: "Retry after the App finishes updating Debug actions."), status: 500, requestID: requestID)
+                return failure(.init(code: AppErrorCode.actionFailed.rawValue, message: "Actions could not be listed.", hint: "Retry after the App finishes updating Debug actions."), status: 500, requestID: requestID)
             }
         }
 
         await router.register(.post, pattern: "/v1/actions/activate") { request, _, requestID in
             guard request.headers["content-type"]?.lowercased() == "application/json" else {
-                return failure(.init(code: "protocol_mismatch", message: "The request Content-Type is invalid.", hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
+                return failure(.init(code: AppErrorCode.protocolMismatch.rawValue, message: "The request Content-Type is invalid.", hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
             }
             guard request.body.count <= context.limits.requestBodyBytes else {
                 return tooLarge(requestID: requestID)
@@ -260,7 +260,7 @@ private enum RouteRegistrar {
             let body: ActivateBody
             do { body = try JSONDecoder().decode(ActivateBody.self, from: request.body) }
             catch {
-                return failure(.init(code: "protocol_mismatch", message: "The action request is malformed.", hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
+                return failure(.init(code: AppErrorCode.protocolMismatch.rawValue, message: "The action request is malformed.", hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
             }
             do {
                 let generation = try await context.activate(body.identifier)
@@ -272,14 +272,14 @@ private enum RouteRegistrar {
             } catch let error as ProtocolError {
                 return failure(error, status: status(for: error, operation: .action), requestID: requestID)
             } catch {
-                return failure(.init(code: "action_failed", message: "Action failed.", hint: "Inspect the App state and Debug logs, then retry."), status: 500, requestID: requestID)
+                return failure(.init(code: AppErrorCode.actionFailed.rawValue, message: "Action failed.", hint: "Inspect the App state and Debug logs, then retry."), status: 500, requestID: requestID)
             }
         }
 
         await registerGET(on: router, pattern: "/v1/state") { _, _, requestID in
             do { return success(try await context.stateSnapshot(), requestID: requestID) }
             catch let error as ProtocolError { return failure(error, status: 500, requestID: requestID) }
-            catch { return failure(.init(code: "state_encoding_failed", message: "App state could not be encoded.", hint: "Verify the DebugStateProvider returns finite, JSON-encodable values under 4 MiB."), status: 500, requestID: requestID) }
+            catch { return failure(.init(code: AppErrorCode.stateEncodingFailed.rawValue, message: "App state could not be encoded.", hint: "Verify the DebugStateProvider returns finite, JSON-encodable values under 4 MiB."), status: 500, requestID: requestID) }
         }
 
         await registerGET(on: router, pattern: "/v1/screenshot") { _, _, requestID in
@@ -299,7 +299,7 @@ private enum RouteRegistrar {
                     ]
                 )
             } catch let error as ProtocolError { return failure(error, status: 500, requestID: requestID) }
-            catch { return failure(.init(code: "screenshot_failed", message: "The foreground App window could not be captured.", hint: "Keep the App foregrounded and avoid protected or unsupported rendering surfaces."), status: 500, requestID: requestID) }
+            catch { return failure(.init(code: AppErrorCode.screenshotFailed.rawValue, message: "The foreground App window could not be captured.", hint: "Keep the App foregrounded and avoid protected or unsupported rendering surfaces."), status: 500, requestID: requestID) }
         }
 
         await registerGET(on: router, pattern: "/v1/recording/status") { _, _, requestID in
@@ -411,15 +411,15 @@ private enum RouteRegistrar {
     }
 
     private static func tooLarge(requestID: String) -> HTTPResponse {
-        failure(.init(code: "artifact_too_large", message: "The requested artifact exceeds the supported size limit.", hint: "Reduce the payload or capture duration and retry."), status: 413, requestID: requestID)
+        failure(.init(code: AppErrorCode.artifactTooLarge.rawValue, message: "The requested artifact exceeds the supported size limit.", hint: "Reduce the payload or capture duration and retry."), status: 413, requestID: requestID)
     }
 
     private static func missingRecording(requestID: String) -> HTTPResponse {
-        failure(.init(code: "recording_not_available", message: "The requested recording is not available.", hint: "Query recording status and use the returned recording identifier."), status: 404, requestID: requestID)
+        failure(.init(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.", hint: "Query recording status and use the returned recording identifier."), status: 404, requestID: requestID)
     }
 
     private static let recordingInternalFailure = ProtocolError(
-        code: "recording_not_available",
+        code: AppErrorCode.recordingNotAvailable.rawValue,
         message: "The recording operation failed.",
         hint: "Keep the App running, inspect Debug logs, and retry with a new recording."
     )
@@ -427,12 +427,12 @@ private enum RouteRegistrar {
     private enum ErrorOperation { case action, recordingOperation, recordingResource }
 
     private static func status(for error: ProtocolError, operation: ErrorOperation) -> Int {
-        switch error.code {
-        case "artifact_too_large": return 413
-        case "action_not_found": return 404
-        case "action_disabled", "recording_invalid_state": return 409
-        case "recording_permission_timeout", "request_timeout": return 504
-        case "recording_not_available": return operation == .recordingResource ? 404 : 503
+        switch AppErrorCode(rawValue: error.code) {
+        case .artifactTooLarge: return 413
+        case .actionNotFound: return 404
+        case .actionDisabled, .recordingInvalidState: return 409
+        case .recordingPermissionTimeout, .requestTimeout: return 504
+        case .recordingNotAvailable: return operation == .recordingResource ? 404 : 503
         default: return 500
         }
     }

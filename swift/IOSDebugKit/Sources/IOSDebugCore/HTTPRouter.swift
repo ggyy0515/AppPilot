@@ -60,11 +60,11 @@ public struct BearerAuthenticator: Sendable {
     public func authorize(_ request: HTTPRequest, isHealth: Bool) -> ProtocolError? {
         guard !isHealth, let token else { return nil }
         guard let value = request.headers["authorization"] else {
-            return .init(code: "auth_required", message: "Authentication is required.", hint: "Set IOS_DEBUG_TOKEN to the App's configured token.")
+            return .init(code: AppErrorCode.authRequired.rawValue, message: "Authentication is required.", hint: "Set IOS_DEBUG_TOKEN to the App's configured token.")
         }
         let prefix = "Bearer "
         guard value.hasPrefix(prefix), constantTimeEqual(Data(value.dropFirst(prefix.count).utf8), token) else {
-            return .init(code: "auth_failed", message: "Authentication failed.", hint: "Verify IOS_DEBUG_TOKEN and retry without printing the token.")
+            return .init(code: AppErrorCode.authFailed.rawValue, message: "Authentication failed.", hint: "Verify IOS_DEBUG_TOKEN and retry without printing the token.")
         }
         return nil
     }
@@ -108,7 +108,7 @@ public actor HTTPRouter {
             } catch {
                 return failure(
                     status: 500,
-                    error: .init(code: "protocol_mismatch", message: "The request could not be completed.", hint: "Retry the request and verify the App and CLI protocol versions match."),
+                    error: .init(code: AppErrorCode.protocolMismatch.rawValue, message: "The request could not be completed.", hint: "Retry the request and verify the App and CLI protocol versions match."),
                     requestID: requestID
                 )
             }
@@ -116,7 +116,7 @@ public actor HTTPRouter {
 
         return failure(
             status: pathMatched ? 405 : 404,
-            error: .init(code: "protocol_mismatch", message: pathMatched ? "The HTTP method is not supported for this path." : "The requested path is not available.", hint: "Verify the App and CLI protocol versions match."),
+            error: .init(code: AppErrorCode.protocolMismatch.rawValue, message: pathMatched ? "The HTTP method is not supported for this path." : "The requested path is not available.", hint: "Verify the App and CLI protocol versions match."),
             requestID: requestID
         )
     }

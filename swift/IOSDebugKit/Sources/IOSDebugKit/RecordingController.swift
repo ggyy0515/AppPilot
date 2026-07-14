@@ -106,12 +106,12 @@ public actor RecordingController {
 
     public func start(maximumDuration: Duration = .seconds(120)) async throws {
         guard maximumDuration >= .seconds(1), maximumDuration <= .seconds(600) else {
-            throw ProtocolError(code: "config_invalid", message: "Recording duration must be between 1 and 600 seconds.", hint: "Choose a recording duration from 1 through 600 seconds.")
+            throw ProtocolError(code: AppErrorCode.configInvalid.rawValue, message: "Recording duration must be between 1 and 600 seconds.", hint: "Choose a recording duration from 1 through 600 seconds.")
         }
         let milliseconds = try durationMilliseconds(maximumDuration)
         guard unsettledStartID == nil else {
             throw ProtocolError(
-                code: "recording_invalid_state",
+                code: AppErrorCode.recordingInvalidState.rawValue,
                 message: "Recording operation is invalid while a previous capture start is still resolving.",
                 hint: "Wait for the previous screen recording permission callback to finish, then retry."
             )
@@ -200,11 +200,11 @@ public actor RecordingController {
     public func file(id: String) throws -> RecordingFile {
         try cleanup()
         guard let metadata = loadMetadata(id: id) else {
-            throw ProtocolError(code: "recording_not_available", message: "The requested recording is not available.", hint: "Query recording status and use the returned recording identifier.")
+            throw ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.", hint: "Query recording status and use the returned recording identifier.")
         }
         let url = storeURL.appendingPathComponent("\(id).mp4")
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw ProtocolError(code: "recording_not_available", message: "The requested recording is not available.", hint: "Create a new recording and retry the download.")
+            throw ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.", hint: "Create a new recording and retry the download.")
         }
         return RecordingFile(metadata: metadata, url: url, mime: "video/mp4")
     }
@@ -350,16 +350,16 @@ public actor RecordingController {
 
     private func mapStartError(_ error: Error) -> ProtocolError {
         if case CaptureFailure.permissionTimeout = error {
-            return ProtocolError(code: "recording_permission_timeout", message: "Screen recording permission was not granted before the deadline.", hint: "Approve screen recording promptly, keep the App foregrounded, and retry.")
+            return ProtocolError(code: AppErrorCode.recordingPermissionTimeout.rawValue, message: "Screen recording permission was not granted before the deadline.", hint: "Approve screen recording promptly, keep the App foregrounded, and retry.")
         }
-        return ProtocolError(code: "recording_not_available", message: "Screen recording is not available.", hint: "Keep the App foregrounded, confirm ReplayKit is available, and retry.")
+        return ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "Screen recording is not available.", hint: "Keep the App foregrounded, confirm ReplayKit is available, and retry.")
     }
 
     private func mapStopError(_ error: Error) -> ProtocolError {
         if case CaptureFailure.stopTimeout = error {
-            return ProtocolError(code: "request_timeout", message: "Recording finalization exceeded its deadline.", hint: "Keep the App running and retry recording status; if paused at a breakpoint, resume it.")
+            return ProtocolError(code: AppErrorCode.requestTimeout.rawValue, message: "Recording finalization exceeded its deadline.", hint: "Keep the App running and retry recording status; if paused at a breakpoint, resume it.")
         }
-        return ProtocolError(code: "recording_not_available", message: "The recording could not be finalized.", hint: "Keep the App foregrounded and create a new recording.")
+        return ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The recording could not be finalized.", hint: "Keep the App foregrounded and create a new recording.")
     }
 
     private enum CaptureFailure: Error, Sendable {

@@ -116,7 +116,7 @@ public struct CapturedScreenshot: Sendable, Equatable {
 
     private static let pngSignature = Data([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     private static let protocolError = ProtocolError(
-        code: "screenshot_failed",
+        code: AppErrorCode.screenshotFailed.rawValue,
         message: "The foreground App window could not be captured.",
         hint: "Keep the App foregrounded and avoid protected or unsupported rendering surfaces."
     )

@@ -231,7 +231,7 @@ public actor NetworkDebugServer {
     ) async {
         let oversized = parseError == .headerTooLarge || parseError == .bodyTooLarge
         let error = ProtocolError(
-            code: oversized ? "artifact_too_large" : "protocol_mismatch",
+            code: oversized ? AppErrorCode.artifactTooLarge.rawValue : AppErrorCode.protocolMismatch.rawValue,
             message: oversized ? "The HTTP request is too large." : "The HTTP request is malformed or unsupported.",
             hint: "Send one bounded HTTP/1.1 request with Content-Length and Connection: close."
         )
@@ -270,7 +270,7 @@ public actor NetworkDebugServer {
     }
 
     private static let startupError = ProtocolError(
-        code: "app_not_reachable",
+        code: AppErrorCode.appNotReachable.rawValue,
         message: "Debug server could not start.",
         hint: "Verify port 9876 is free and launch a Debug build."
     )

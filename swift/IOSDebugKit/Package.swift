@@ -11,7 +11,7 @@ let package = Package(
     targets: [
         .target(name: "IOSDebugCore"),
         .target(name: "IOSDebugKit", dependencies: ["IOSDebugCore"]),
-        .testTarget(name: "IOSDebugCoreTests", dependencies: ["IOSDebugCore"]),
+        .testTarget(name: "IOSDebugCoreTests", dependencies: ["IOSDebugCore", "IOSDebugKit"]),
         .testTarget(name: "IOSDebugKitTests", dependencies: ["IOSDebugKit", "IOSDebugCore"]),
     ],
     swiftLanguageModes: [.v6]

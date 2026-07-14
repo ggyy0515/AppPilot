@@ -132,7 +132,7 @@ public struct RecordingStateMachine: Sendable {
                 let startRequestedAt,
                 at.milliseconds - startRequestedAt.milliseconds >= 60_000
             else { throw invalidStateError() }
-            fail(code: "recording_permission_timeout", at: at)
+            fail(code: AppErrorCode.recordingPermissionTimeout.rawValue, at: at)
 
         case let .stopTimedOut(at):
             guard
@@ -141,7 +141,7 @@ public struct RecordingStateMachine: Sendable {
                 let stopRequestedAt,
                 at.milliseconds - stopRequestedAt.milliseconds >= 90_000
             else { throw invalidStateError() }
-            fail(code: "request_timeout", at: at)
+            fail(code: AppErrorCode.requestTimeout.rawValue, at: at)
 
         case let .maximumDurationReached(at):
             guard
@@ -172,7 +172,7 @@ public struct RecordingStateMachine: Sendable {
 
     private func invalidStateError() -> ProtocolError {
         ProtocolError(
-            code: "recording_invalid_state",
+            code: AppErrorCode.recordingInvalidState.rawValue,
             message: "Recording operation is invalid while state is \(status.phase.rawValue).",
             hint: "Query recording status and retry only after the current transition finishes."
         )
