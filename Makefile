@@ -12,8 +12,9 @@ IOS_DEBUG_BIN := $(BUILD_DIR)/ios-debug
 DERIVED_DATA ?= $(BUILD_DIR)/DerivedData
 DEMO_PROJECT := Examples/DebugDemo/DebugDemo.xcodeproj
 DEMO_SCHEME := DebugDemo
+DEMO_RELEASE_SCHEME := DebugDemo-Release
 
-.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e clean
+.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan clean
 
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
@@ -35,13 +36,17 @@ demo-debug:
 		-derivedDataPath "$(DERIVED_DATA)" CODE_SIGNING_ALLOWED=NO build
 
 demo-release:
-	@$(XCODEBUILD) -project "$(DEMO_PROJECT)" -scheme "$(DEMO_SCHEME)" \
+	@$(XCODEBUILD) -project "$(DEMO_PROJECT)" -scheme "$(DEMO_RELEASE_SCHEME)" \
 		-configuration Release -sdk iphonesimulator \
 		-derivedDataPath "$(DERIVED_DATA)" CODE_SIGNING_ALLOWED=NO build
 
 simulator-e2e: build-cli
 	@IOS_DEBUG_BIN="$(IOS_DEBUG_BIN)" DERIVED_DATA="$(BUILD_DIR)/DerivedData-simulator-e2e" \
 		./scripts/simulator-e2e.sh
+
+release-scan: build-cli
+	@IOS_DEBUG_BIN="$(IOS_DEBUG_BIN)" DERIVED_DATA="$(BUILD_DIR)/DerivedData-release-scan" \
+		./scripts/release-scan.sh
 
 clean:
 	@./scripts/clean-build.sh "$(CURDIR)" "$(BUILD_DIR)"
