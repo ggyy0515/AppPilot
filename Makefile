@@ -17,9 +17,12 @@ SHARE_ROOT := $(PREFIX)/share/ios-debug
 PACKAGE_INSTALL := $(SHARE_ROOT)/IOSDebugKit
 SKILL_INSTALL := $(CODEX_HOME)/skills/sx-ios-debug
 
-.PHONY: fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
+.PHONY: swift-format-config-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
 
-fmt-check:
+swift-format-config-test:
+	@./scripts/tests/swift-format-config-test.sh
+
+fmt-check: swift-format-config-test
 	@test -z "$$(gofmt -l cli)" || { gofmt -l cli; exit 1; }
 	@cd swift/IOSDebugKit && $(SWIFT) format lint --recursive --strict \
 		--configuration .swift-format Package.swift Sources Tests
