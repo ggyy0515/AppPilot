@@ -178,12 +178,12 @@ import UIKit
                 lifecycle = .starting(generation, task)
                 try await finishStart(generation: generation, task: task)
                 return
-            case let .starting(generation, task):
+            case .starting(let generation, let task):
                 try await finishStart(generation: generation, task: task)
                 return
             case .running:
                 return
-            case let .stopping(generation, task):
+            case .stopping(let generation, let task):
                 await task.value
                 finishStop(generation: generation)
             }
@@ -194,7 +194,7 @@ import UIKit
         switch lifecycle {
         case .stopped:
             return
-        case let .starting(generation, startTask):
+        case .starting(let generation, let startTask):
             let task = Task { @MainActor [recording] in
                 do {
                     let server = try await startTask.value
@@ -206,14 +206,14 @@ import UIKit
             lifecycle = .stopping(generation, task)
             await task.value
             finishStop(generation: generation)
-        case let .running(generation, server):
+        case .running(let generation, let server):
             let task = Task { @MainActor [recording] in
                 await Self.shutDown(server: server, recording: recording)
             }
             lifecycle = .stopping(generation, task)
             await task.value
             finishStop(generation: generation)
-        case let .stopping(generation, task):
+        case .stopping(let generation, let task):
             await task.value
             finishStop(generation: generation)
         }
@@ -237,11 +237,11 @@ import UIKit
     private func finishStart(generation: UInt64, task: Task<ServerSource, Error>) async throws {
         do {
             let server = try await task.value
-            if case let .starting(currentGeneration, _) = lifecycle, currentGeneration == generation {
+            if case .starting(let currentGeneration, _) = lifecycle, currentGeneration == generation {
                 lifecycle = .running(generation, server)
             }
         } catch {
-            if case let .starting(currentGeneration, _) = lifecycle, currentGeneration == generation {
+            if case .starting(let currentGeneration, _) = lifecycle, currentGeneration == generation {
                 lifecycle = .stopped
             }
             throw error
@@ -249,7 +249,7 @@ import UIKit
     }
 
     private func finishStop(generation: UInt64) {
-        if case let .stopping(currentGeneration, _) = lifecycle, currentGeneration == generation {
+        if case .stopping(let currentGeneration, _) = lifecycle, currentGeneration == generation {
             lifecycle = .stopped
         }
     }
@@ -300,22 +300,23 @@ private enum RouteRegistrar {
 
         await registerGET(on: router, pattern: "/v1/capabilities") { _, _, requestID in
             let available = await context.recording.isAvailable()
-            return success(.object([
-                "protocol_version": .number(Double(IOSDebugProtocol.version)),
-                "actions": .bool(true),
-                "state": .bool(true),
-                "screenshot": .bool(true),
-                "recording": .bool(available),
-                "limits": .object([
-                    "header_bytes": .number(Double(IOSDebugProtocol.maximumHeaderBytes)),
-                    "request_body_bytes": .number(Double(IOSDebugProtocol.maximumRequestBodyBytes)),
-                    "state_bytes": .number(Double(IOSDebugProtocol.maximumStateBytes)),
-                    "png_bytes": .number(Double(IOSDebugProtocol.maximumPNGBytes)),
-                    "mp4_bytes": .number(Double(IOSDebugProtocol.maximumMP4Bytes)),
-                    "recording_default_seconds": .number(Double(seconds(context.configuration.maximumRecordingDuration))),
-                    "recording_maximum_seconds": .number(600),
-                ]),
-            ]), requestID: requestID)
+            return success(
+                .object([
+                    "protocol_version": .number(Double(IOSDebugProtocol.version)),
+                    "actions": .bool(true),
+                    "state": .bool(true),
+                    "screenshot": .bool(true),
+                    "recording": .bool(available),
+                    "limits": .object([
+                        "header_bytes": .number(Double(IOSDebugProtocol.maximumHeaderBytes)),
+                        "request_body_bytes": .number(Double(IOSDebugProtocol.maximumRequestBodyBytes)),
+                        "state_bytes": .number(Double(IOSDebugProtocol.maximumStateBytes)),
+                        "png_bytes": .number(Double(IOSDebugProtocol.maximumPNGBytes)),
+                        "mp4_bytes": .number(Double(IOSDebugProtocol.maximumMP4Bytes)),
+                        "recording_default_seconds": .number(Double(seconds(context.configuration.maximumRecordingDuration))),
+                        "recording_maximum_seconds": .number(600),
+                    ]),
+                ]), requestID: requestID)
         }
 
         await registerGET(on: router, pattern: "/v1/actions") { _, _, requestID in
@@ -323,40 +324,56 @@ private enum RouteRegistrar {
                 let snapshot = await context.actionSnapshot()
                 return try success(JSONValue.encode(snapshot), requestID: requestID)
             } catch {
-                return failure(.init(code: AppErrorCode.actionFailed.rawValue, message: "Actions could not be listed.", hint: "Retry after the App finishes updating Debug actions."), status: 500, requestID: requestID)
+                return failure(
+                    .init(
+                        code: AppErrorCode.actionFailed.rawValue, message: "Actions could not be listed.",
+                        hint: "Retry after the App finishes updating Debug actions."), status: 500, requestID: requestID)
             }
         }
 
         await router.register(.post, pattern: "/v1/actions/activate") { request, _, requestID in
             guard request.headers["content-type"]?.lowercased() == "application/json" else {
-                return failure(.init(code: AppErrorCode.protocolMismatch.rawValue, message: "The request Content-Type is invalid.", hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
+                return failure(
+                    .init(
+                        code: AppErrorCode.protocolMismatch.rawValue, message: "The request Content-Type is invalid.",
+                        hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
             }
             guard request.body.count <= context.limits.requestBodyBytes else {
                 return tooLarge(requestID: requestID)
             }
             let body: ActivateBody
-            do { body = try JSONDecoder().decode(ActivateBody.self, from: request.body) }
-            catch {
-                return failure(.init(code: AppErrorCode.protocolMismatch.rawValue, message: "The action request is malformed.", hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
+            do { body = try JSONDecoder().decode(ActivateBody.self, from: request.body) } catch {
+                return failure(
+                    .init(
+                        code: AppErrorCode.protocolMismatch.rawValue, message: "The action request is malformed.",
+                        hint: "Send application/json with exactly one identifier field."), status: 400, requestID: requestID)
             }
             do {
                 let generation = try await context.activate(body.identifier)
-                return success(.object([
-                    "identifier": .string(body.identifier),
-                    "generation": .number(Double(generation)),
-                    "activated": .bool(true),
-                ]), requestID: requestID)
+                return success(
+                    .object([
+                        "identifier": .string(body.identifier),
+                        "generation": .number(Double(generation)),
+                        "activated": .bool(true),
+                    ]), requestID: requestID)
             } catch let error as ProtocolError {
                 return failure(error, status: status(for: error, operation: .action), requestID: requestID)
             } catch {
-                return failure(.init(code: AppErrorCode.actionFailed.rawValue, message: "Action failed.", hint: "Inspect the App state and Debug logs, then retry."), status: 500, requestID: requestID)
+                return failure(
+                    .init(code: AppErrorCode.actionFailed.rawValue, message: "Action failed.", hint: "Inspect the App state and Debug logs, then retry."),
+                    status: 500, requestID: requestID)
             }
         }
 
         await registerGET(on: router, pattern: "/v1/state") { _, _, requestID in
-            do { return success(try await context.stateSnapshot(), requestID: requestID) }
-            catch let error as ProtocolError { return failure(error, status: 500, requestID: requestID) }
-            catch { return failure(.init(code: AppErrorCode.stateEncodingFailed.rawValue, message: "App state could not be encoded.", hint: "Verify the DebugStateProvider returns finite, JSON-encodable values under 4 MiB."), status: 500, requestID: requestID) }
+            do { return success(try await context.stateSnapshot(), requestID: requestID) } catch let error as ProtocolError {
+                return failure(error, status: 500, requestID: requestID)
+            } catch {
+                return failure(
+                    .init(
+                        code: AppErrorCode.stateEncodingFailed.rawValue, message: "App state could not be encoded.",
+                        hint: "Verify the DebugStateProvider returns finite, JSON-encodable values under 4 MiB."), status: 500, requestID: requestID)
+            }
         }
 
         await registerGET(on: router, pattern: "/v1/screenshot") { _, _, requestID in
@@ -375,8 +392,12 @@ private enum RouteRegistrar {
                         "X-IOS-Debug-Scale": String(screenshot.scale),
                     ]
                 )
-            } catch let error as ProtocolError { return failure(error, status: 500, requestID: requestID) }
-            catch { return failure(.init(code: AppErrorCode.screenshotFailed.rawValue, message: "The foreground App window could not be captured.", hint: "Keep the App foregrounded and avoid protected or unsupported rendering surfaces."), status: 500, requestID: requestID) }
+            } catch let error as ProtocolError { return failure(error, status: 500, requestID: requestID) } catch {
+                return failure(
+                    .init(
+                        code: AppErrorCode.screenshotFailed.rawValue, message: "The foreground App window could not be captured.",
+                        hint: "Keep the App foregrounded and avoid protected or unsupported rendering surfaces."), status: 500, requestID: requestID)
+            }
         }
 
         await registerGET(on: router, pattern: "/v1/recording/status") { _, _, requestID in
@@ -397,13 +418,14 @@ private enum RouteRegistrar {
         await router.register(.post, pattern: "/v1/recording/stop") { _, _, requestID in
             do {
                 let metadata = try await context.recording.stop()
-                return success(.object([
-                    "recording_id": .string(metadata.id),
-                    "byte_count": .number(Double(metadata.byteCount)),
-                    "duration_ms": .number(Double(metadata.durationMilliseconds)),
-                    "sha256": .string(metadata.sha256),
-                    "mime": .string("video/mp4"),
-                ]), requestID: requestID)
+                return success(
+                    .object([
+                        "recording_id": .string(metadata.id),
+                        "byte_count": .number(Double(metadata.byteCount)),
+                        "duration_ms": .number(Double(metadata.durationMilliseconds)),
+                        "sha256": .string(metadata.sha256),
+                        "mime": .string("video/mp4"),
+                    ]), requestID: requestID)
             } catch let error as ProtocolError {
                 return failure(error, status: status(for: error, operation: .recordingOperation), requestID: requestID)
             } catch {
@@ -488,11 +510,17 @@ private enum RouteRegistrar {
     }
 
     private static func tooLarge(requestID: String) -> HTTPResponse {
-        failure(.init(code: AppErrorCode.artifactTooLarge.rawValue, message: "The requested artifact exceeds the supported size limit.", hint: "Reduce the payload or capture duration and retry."), status: 413, requestID: requestID)
+        failure(
+            .init(
+                code: AppErrorCode.artifactTooLarge.rawValue, message: "The requested artifact exceeds the supported size limit.",
+                hint: "Reduce the payload or capture duration and retry."), status: 413, requestID: requestID)
     }
 
     private static func missingRecording(requestID: String) -> HTTPResponse {
-        failure(.init(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.", hint: "Query recording status and use the returned recording identifier."), status: 404, requestID: requestID)
+        failure(
+            .init(
+                code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.",
+                hint: "Query recording status and use the returned recording identifier."), status: 404, requestID: requestID)
     }
 
     private static let recordingInternalFailure = ProtocolError(
@@ -525,7 +553,7 @@ private struct ActivateBody: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: DynamicCodingKey.self)
         guard Set(container.allKeys.map(\.stringValue)) == ["identifier"],
-              let key = DynamicCodingKey(stringValue: "identifier")
+            let key = DynamicCodingKey(stringValue: "identifier")
         else { throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Expected only identifier")) }
         identifier = try container.decode(String.self, forKey: key)
         guard !identifier.isEmpty else {
@@ -537,7 +565,13 @@ private struct ActivateBody: Decodable {
 private struct DynamicCodingKey: CodingKey {
     let stringValue: String
     let intValue: Int?
-    init?(stringValue: String) { self.stringValue = stringValue; intValue = nil }
-    init?(intValue: Int) { stringValue = String(intValue); self.intValue = intValue }
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+        intValue = nil
+    }
+    init?(intValue: Int) {
+        stringValue = String(intValue)
+        self.intValue = intValue
+    }
 }
 #endif

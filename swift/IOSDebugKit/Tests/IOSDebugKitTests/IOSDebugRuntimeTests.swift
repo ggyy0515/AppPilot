@@ -8,7 +8,10 @@ import Testing
 private final class RuntimeStateProvider: DebugStateProvider {
     var result: Result<JSONValue, Error> = .success(.object(["screen": .string("home")]))
     var callCount = 0
-    func debugState() throws -> JSONValue { callCount += 1; return try result.get() }
+    func debugState() throws -> JSONValue {
+        callCount += 1
+        return try result.get()
+    }
 }
 
 private struct RuntimeTestFailure: Error {}
@@ -19,7 +22,7 @@ private enum RuntimeInjectedError: Error, Sendable {
 
     func raise() throws {
         switch self {
-        case let .protocolError(error): throw error
+        case .protocolError(let error): throw error
         case .internalFailure: throw RuntimeTestFailure()
         }
     }
@@ -66,7 +69,10 @@ private final class RuntimeScreenshotFake {
     var callCount = 0
 
     init(_ screenshot: CapturedScreenshot) { result = .success(screenshot) }
-    func capture() throws -> CapturedScreenshot { callCount += 1; return try result.get() }
+    func capture() throws -> CapturedScreenshot {
+        callCount += 1
+        return try result.get()
+    }
 }
 
 private actor RuntimeRecordingFake {
@@ -127,13 +133,22 @@ private actor RuntimeRecordingFake {
         return .init(metadata: Self.metadata, data: fileData, mime: "video/mp4")
     }
     private func didDelete(id: String) { deleteIDs.append(id) }
-    private func didCleanup() async { cleanupCount += 1; await eventLog?.append("recording.cleanup") }
+    private func didCleanup() async {
+        cleanupCount += 1
+        await eventLog?.append("recording.cleanup")
+    }
     private func performCleanup() async {
         await cleanupGate?.wait()
         await didCleanup()
     }
-    private func readAvailability() -> Bool { availableCount += 1; return available }
-    private func readStatus() -> RecordingStatus { statusCount += 1; return current }
+    private func readAvailability() -> Bool {
+        availableCount += 1
+        return available
+    }
+    private func readStatus() -> RecordingStatus {
+        statusCount += 1
+        return current
+    }
 
     static let metadata = RecordingMetadata(
         id: "recording-1",
@@ -235,7 +250,8 @@ private func makeRuntime(
         )
     )
     await runtime.waitForRouteRegistrationForTesting()
-    return .init(runtime: runtime, state: state, screenshot: screenshotFake, activationCount: activationCount, recording: recording, server: server, eventLog: eventLog)
+    return .init(
+        runtime: runtime, state: state, screenshot: screenshotFake, activationCount: activationCount, recording: recording, server: server, eventLog: eventLog)
 }
 
 @MainActor
@@ -259,7 +275,7 @@ private func json(_ response: HTTPResponse) throws -> JSONValue {
 
 private func keys(_ value: JSONValue?, at path: String = "") -> Set<String> {
     let target = path.isEmpty ? value : value?.value(at: path)
-    guard case let .object(object) = target else { return [] }
+    guard case .object(let object) = target else { return [] }
     return Set(object.keys)
 }
 
@@ -267,7 +283,7 @@ private func expectJSONMetadata(_ response: HTTPResponse) throws {
     let payload = try json(response)
     #expect(keys(payload, at: "meta") == ["protocol_version", "request_id"])
     #expect(payload.value(at: "meta.protocol_version") == .number(1))
-    guard case let .string(requestID) = payload.value(at: "meta.request_id") else {
+    guard case .string(let requestID) = payload.value(at: "meta.request_id") else {
         Issue.record("Expected string request_id")
         return
     }
@@ -281,12 +297,12 @@ private func waitForEntry(into gate: RuntimeGate) async {
     while await gate.entryCount == 0 { await Task.yield() }
 }
 
-private extension JSONValue {
-    func value(at path: String) -> JSONValue? {
+extension JSONValue {
+    fileprivate func value(at path: String) -> JSONValue? {
         path.split(separator: ".").reduce(Optional(self)) { value, component in
             guard let value else { return nil }
-            if case let .object(object) = value { return object[String(component)] }
-            if case let .array(array) = value, let index = Int(component), array.indices.contains(index) { return array[index] }
+            if case .object(let object) = value { return object[String(component)] }
+            if case .array(let array) = value, let index = Int(component), array.indices.contains(index) { return array[index] }
             return nil
         }
     }
@@ -313,16 +329,20 @@ private extension JSONValue {
     try expectJSONMetadata(health)
 
     let trustedHostHealth = await request(try await makeRuntime(token: nil), .get, "/v1/health", authorize: false)
-    #expect(keys(try json(trustedHostHealth), at: "data") == [
-        "service", "app_bundle_identifier", "app_version", "protocol_version", "auth_required", "reachable",
-    ])
+    #expect(
+        keys(try json(trustedHostHealth), at: "data") == [
+            "service", "app_bundle_identifier", "app_version", "protocol_version", "auth_required", "reachable",
+        ])
     #expect(try json(trustedHostHealth).value(at: "data.service") == .string("ios-debug"))
     #expect(try json(trustedHostHealth).value(at: "data.auth_required") == .bool(false))
     #expect(try json(trustedHostHealth).value(at: "data.reachable") == .bool(true))
 
     let capabilities = await request(harness, .get, "/v1/capabilities")
     #expect(keys(try json(capabilities), at: "data") == ["protocol_version", "actions", "state", "screenshot", "recording", "limits"])
-    #expect(keys(try json(capabilities), at: "data.limits") == ["header_bytes", "request_body_bytes", "state_bytes", "png_bytes", "mp4_bytes", "recording_default_seconds", "recording_maximum_seconds"])
+    #expect(
+        keys(try json(capabilities), at: "data.limits") == [
+            "header_bytes", "request_body_bytes", "state_bytes", "png_bytes", "mp4_bytes", "recording_default_seconds", "recording_maximum_seconds",
+        ])
     #expect(try json(capabilities).value(at: "data.actions") == .bool(true))
     #expect(try json(capabilities).value(at: "data.recording") == .bool(true))
     #expect(try json(capabilities).value(at: "data.limits.mp4_bytes") == .number(Double(IOSDebugProtocol.maximumMP4Bytes)))
@@ -396,20 +416,22 @@ private extension JSONValue {
     #expect(screenshot.headers["X-IOS-Debug-Protocol-Version"] == "1")
     #expect(screenshot.headers["X-IOS-Debug-Request-ID"]?.isEmpty == false)
     #expect(screenshot.headers["Content-Length"] == String(screenshot.body.count))
-    #expect(Set(screenshot.headers.keys) == [
-        "Content-Type", "Content-Length", "X-IOS-Debug-Protocol-Version", "X-IOS-Debug-Request-ID",
-        "X-IOS-Debug-SHA256", "X-IOS-Debug-Capture-Method", "X-IOS-Debug-Pixel-Width",
-        "X-IOS-Debug-Pixel-Height", "X-IOS-Debug-Scale",
-    ])
+    #expect(
+        Set(screenshot.headers.keys) == [
+            "Content-Type", "Content-Length", "X-IOS-Debug-Protocol-Version", "X-IOS-Debug-Request-ID",
+            "X-IOS-Debug-SHA256", "X-IOS-Debug-Capture-Method", "X-IOS-Debug-Pixel-Width",
+            "X-IOS-Debug-Pixel-Height", "X-IOS-Debug-Scale",
+        ])
 
     let recording = await request(harness, .get, "/v1/recordings/recording-1")
     #expect(recording.body == Data("mp4-data".utf8))
     #expect(recording.headers["Content-Type"] == "video/mp4")
     #expect(recording.headers["X-IOS-Debug-SHA256"] == RuntimeRecordingFake.metadata.sha256)
     #expect(recording.headers["Content-Length"] == "8")
-    #expect(Set(recording.headers.keys) == [
-        "Content-Type", "Content-Length", "X-IOS-Debug-Protocol-Version", "X-IOS-Debug-Request-ID", "X-IOS-Debug-SHA256",
-    ])
+    #expect(
+        Set(recording.headers.keys) == [
+            "Content-Type", "Content-Length", "X-IOS-Debug-Protocol-Version", "X-IOS-Debug-Request-ID", "X-IOS-Debug-SHA256",
+        ])
 
     let head = await request(harness, .head, "/v1/recordings/recording-1")
     #expect(head.statusCode == 200)
@@ -418,9 +440,11 @@ private extension JSONValue {
     #expect(head.serialized(headOnly: true).contains(Data("Content-Length: 8".utf8)))
 
     let screenshotHead = await request(harness, .head, "/v1/screenshot")
-    #expect(screenshotHead.headers == screenshot.headers.filter { $0.key != "X-IOS-Debug-Request-ID" }.merging([
-        "X-IOS-Debug-Request-ID": screenshotHead.headers["X-IOS-Debug-Request-ID"]!,
-    ]) { _, new in new })
+    #expect(
+        screenshotHead.headers
+            == screenshot.headers.filter { $0.key != "X-IOS-Debug-Request-ID" }.merging([
+                "X-IOS-Debug-Request-ID": screenshotHead.headers["X-IOS-Debug-Request-ID"]!
+            ]) { _, new in new })
     #expect(screenshotHead.serialized(headOnly: true).count < screenshotHead.serialized(headOnly: false).count)
 }
 
@@ -568,9 +592,11 @@ private extension JSONValue {
 
 @Test @MainActor func deleteMissingInvalidAndInternalFailuresRemainDistinct() async throws {
     let harness = try await makeRuntime()
-    await harness.recording.setDeleteError(.protocolError(.init(
-        code: "recording_not_available", message: "Missing", hint: "Record again"
-    )))
+    await harness.recording.setDeleteError(
+        .protocolError(
+            .init(
+                code: "recording_not_available", message: "Missing", hint: "Record again"
+            )))
     let missing = await request(harness, .delete, "/v1/recordings/missing")
     #expect(missing.statusCode == 404)
     #expect(try json(missing).value(at: "error.code") == .string("recording_not_available"))
@@ -626,12 +652,13 @@ private extension JSONValue {
     let harness = try await makeRuntime()
     for phase in [RecordingPhase.idle, .starting, .recording, .stopping, .ready, .failed] {
         let metadata = phase == .ready ? RuntimeRecordingFake.metadata : nil
-        await harness.recording.setStatus(.init(
-            phase: phase,
-            elapsedMilliseconds: 42,
-            recording: metadata,
-            failureCode: phase == .failed ? "recording_not_available" : nil
-        ))
+        await harness.recording.setStatus(
+            .init(
+                phase: phase,
+                elapsedMilliseconds: 42,
+                recording: metadata,
+                failureCode: phase == .failed ? "recording_not_available" : nil
+            ))
         let response = await request(harness, .get, "/v1/recording/status")
         #expect(try json(response).value(at: "data.state") == .string(phase.rawValue))
         #expect(try json(response).value(at: "data.elapsed_ms") == .number(42))
@@ -764,16 +791,16 @@ private extension JSONValue {
     #expect(await harness.eventLog.events == ["recording.cleanup", "server.start", "server.stop", "recording.stop"])
 }
 
-private extension RuntimeRecordingFake {
-    func setStartError(_ error: RuntimeInjectedError?) { startError = error }
-    func setStopError(_ error: RuntimeInjectedError?) { stopError = error }
-    func setFileError(_ error: RuntimeInjectedError?) { fileError = error }
-    func setDeleteError(_ error: RuntimeInjectedError?) { deleteError = error }
-    func setFile(data: Data) { fileData = data }
-    func setStatus(_ status: RecordingStatus) { current = status }
+extension RuntimeRecordingFake {
+    fileprivate func setStartError(_ error: RuntimeInjectedError?) { startError = error }
+    fileprivate func setStopError(_ error: RuntimeInjectedError?) { stopError = error }
+    fileprivate func setFileError(_ error: RuntimeInjectedError?) { fileError = error }
+    fileprivate func setDeleteError(_ error: RuntimeInjectedError?) { deleteError = error }
+    fileprivate func setFile(data: Data) { fileData = data }
+    fileprivate func setStatus(_ status: RecordingStatus) { current = status }
 }
 
-private extension RuntimeServerFake {
-    func setStartError(_ error: ProtocolError?) { startError = error }
+extension RuntimeServerFake {
+    fileprivate func setStartError(_ error: ProtocolError?) { startError = error }
 }
 #endif

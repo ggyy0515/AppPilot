@@ -34,20 +34,19 @@ private final class ReplayKitCaptureSource: ScreenCaptureSource, @unchecked Send
     ) async throws {
         recorder.isMicrophoneEnabled = false
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            recorder.startCapture(handler: { buffer, type, error in
-                if error == nil { handler(buffer, type) }
-                else { failureHandler() }
-            }, completionHandler: { error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume() }
-            })
+            recorder.startCapture(
+                handler: { buffer, type, error in
+                    if error == nil { handler(buffer, type) } else { failureHandler() }
+                },
+                completionHandler: { error in
+                    if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+                })
         }
     }
     func stop() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             recorder.stopCapture { error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume() }
+                if let error { continuation.resume(throwing: error) } else { continuation.resume() }
             }
         }
     }
@@ -106,7 +105,9 @@ public actor RecordingController {
 
     public func start(maximumDuration: Duration = .seconds(120)) async throws {
         guard maximumDuration >= .seconds(1), maximumDuration <= .seconds(600) else {
-            throw ProtocolError(code: AppErrorCode.configInvalid.rawValue, message: "Recording duration must be between 1 and 600 seconds.", hint: "Choose a recording duration from 1 through 600 seconds.")
+            throw ProtocolError(
+                code: AppErrorCode.configInvalid.rawValue, message: "Recording duration must be between 1 and 600 seconds.",
+                hint: "Choose a recording duration from 1 through 600 seconds.")
         }
         let milliseconds = try durationMilliseconds(maximumDuration)
         guard unsettledStartID == nil else {
@@ -144,8 +145,7 @@ public actor RecordingController {
             }
             if failedAtPublication { _ = try await stop() }
             automaticStop = Task { [weak self, clock] in
-                do { try await clock.sleep(for: maximumDuration) }
-                catch { return }
+                do { try await clock.sleep(for: maximumDuration) } catch { return }
                 await self?.stopIfCurrent(recordingID: id)
             }
         } catch {
@@ -200,11 +200,15 @@ public actor RecordingController {
     public func file(id: String) throws -> RecordingFile {
         try cleanup()
         guard let metadata = loadMetadata(id: id) else {
-            throw ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.", hint: "Query recording status and use the returned recording identifier.")
+            throw ProtocolError(
+                code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.",
+                hint: "Query recording status and use the returned recording identifier.")
         }
         let url = storeURL.appendingPathComponent("\(id).mp4")
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.", hint: "Create a new recording and retry the download.")
+            throw ProtocolError(
+                code: AppErrorCode.recordingNotAvailable.rawValue, message: "The requested recording is not available.",
+                hint: "Create a new recording and retry the download.")
         }
         return RecordingFile(metadata: metadata, url: url, mime: "video/mp4")
     }
@@ -222,9 +226,10 @@ public actor RecordingController {
     func cleanup() throws {
         try FileManager.default.createDirectory(at: storeURL, withIntermediateDirectories: true)
         let urls = try FileManager.default.contentsOfDirectory(at: storeURL, includingPropertiesForKeys: nil)
-        for url in urls where
+        for url in urls
+        where
             url.pathExtension == "partial"
-                && url.standardizedFileURL != activeURL?.standardizedFileURL
+            && url.standardizedFileURL != activeURL?.standardizedFileURL
         {
             try? FileManager.default.removeItem(at: url)
         }
@@ -232,7 +237,9 @@ public actor RecordingController {
         for url in urls where url.pathExtension == "json" {
             if let data = try? Data(contentsOf: url), let metadata = try? JSONDecoder().decode(RecordingMetadata.self, from: data) {
                 metadataByID[metadata.id] = metadata
-            } else { try? FileManager.default.removeItem(at: url) }
+            } else {
+                try? FileManager.default.removeItem(at: url)
+            }
         }
         let entries = metadataByID.values.map { RecordingRetentionEntry(identifier: $0.id, phase: .ready, createdAt: $0.createdAt) }
         let identifiers = RecordingRetentionPolicy.identifiersToDelete(now: clock.now(), entries: entries)
@@ -240,8 +247,7 @@ public actor RecordingController {
             try? FileManager.default.removeItem(at: storeURL.appendingPathComponent("\(id).mp4"))
             try? FileManager.default.removeItem(at: metadataURL(id: id))
         }
-        if
-            machine.status.phase == .ready,
+        if machine.status.phase == .ready,
             let currentID = machine.status.recording?.id,
             identifiers.contains(currentID)
         {
@@ -262,8 +268,7 @@ public actor RecordingController {
         try await withCheckedThrowingContinuation { continuation in
             let gate = TimeoutRaceGate(continuation: continuation)
             let operationTask = Task {
-                do { gate.resolve(.success(try await operation()), winner: .operation) }
-                catch { gate.resolve(.failure(error), winner: .operation) }
+                do { gate.resolve(.success(try await operation()), winner: .operation) } catch { gate.resolve(.failure(error), winner: .operation) }
             }
             let timeoutTask = Task { [clock] in
                 do {
@@ -319,16 +324,15 @@ public actor RecordingController {
 
         let belongsToCurrentStart =
             unsettledStartID == recordingID
-                && activeID == recordingID
-                && machine.status.phase == .starting
+            && activeID == recordingID
+            && machine.status.phase == .starting
         guard belongsToCurrentStart else {
             defer { settleStartOperation(recordingID: recordingID) }
             try? await source.stop()
             throw CancellationError()
         }
         settleStartOperation(recordingID: recordingID)
-        do { try intake.throwIfFailed() }
-        catch {
+        do { try intake.throwIfFailed() } catch {
             try? await source.stop()
             throw error
         }
@@ -336,7 +340,10 @@ public actor RecordingController {
     private func settleStartOperation(recordingID: String) {
         if unsettledStartID == recordingID { unsettledStartID = nil }
     }
-    private func discardPartial() { if let activeURL { try? FileManager.default.removeItem(at: activeURL) }; clearActive() }
+    private func discardPartial() {
+        if let activeURL { try? FileManager.default.removeItem(at: activeURL) }
+        clearActive()
+    }
     private func clearActive() {
         automaticStop?.cancel()
         automaticStop = nil
@@ -350,16 +357,24 @@ public actor RecordingController {
 
     private func mapStartError(_ error: Error) -> ProtocolError {
         if case CaptureFailure.permissionTimeout = error {
-            return ProtocolError(code: AppErrorCode.recordingPermissionTimeout.rawValue, message: "Screen recording permission was not granted before the deadline.", hint: "Approve screen recording promptly, keep the App foregrounded, and retry.")
+            return ProtocolError(
+                code: AppErrorCode.recordingPermissionTimeout.rawValue, message: "Screen recording permission was not granted before the deadline.",
+                hint: "Approve screen recording promptly, keep the App foregrounded, and retry.")
         }
-        return ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "Screen recording is not available.", hint: "Keep the App foregrounded, confirm ReplayKit is available, and retry.")
+        return ProtocolError(
+            code: AppErrorCode.recordingNotAvailable.rawValue, message: "Screen recording is not available.",
+            hint: "Keep the App foregrounded, confirm ReplayKit is available, and retry.")
     }
 
     private func mapStopError(_ error: Error) -> ProtocolError {
         if case CaptureFailure.stopTimeout = error {
-            return ProtocolError(code: AppErrorCode.requestTimeout.rawValue, message: "Recording finalization exceeded its deadline.", hint: "Keep the App running and retry recording status; if paused at a breakpoint, resume it.")
+            return ProtocolError(
+                code: AppErrorCode.requestTimeout.rawValue, message: "Recording finalization exceeded its deadline.",
+                hint: "Keep the App running and retry recording status; if paused at a breakpoint, resume it.")
         }
-        return ProtocolError(code: AppErrorCode.recordingNotAvailable.rawValue, message: "The recording could not be finalized.", hint: "Keep the App foregrounded and create a new recording.")
+        return ProtocolError(
+            code: AppErrorCode.recordingNotAvailable.rawValue, message: "The recording could not be finalized.",
+            hint: "Keep the App foregrounded and create a new recording.")
     }
 
     private enum CaptureFailure: Error, Sendable {

@@ -92,24 +92,24 @@ public struct RecordingStateMachine: Sendable {
 
     public mutating func apply(_ event: RecordingEvent) throws {
         switch event {
-        case let .startRequested(at, duration):
+        case .startRequested(let at, let duration):
             guard status.phase == .idle, duration.milliseconds > 0 else { throw invalidStateError() }
             startRequestedAt = at
             maximumDuration = duration
             lastEventAt = at
             status = RecordingStatus(phase: .starting, elapsedMilliseconds: 0, recording: nil, failureCode: nil)
 
-        case let .captureStarted(at):
+        case .captureStarted(let at):
             guard status.phase == .starting, isCurrent(at) else { throw invalidStateError() }
             captureStartedAt = at
             lastEventAt = at
             status = RecordingStatus(phase: .recording, elapsedMilliseconds: 0, recording: nil, failureCode: nil)
 
-        case let .stopRequested(at):
+        case .stopRequested(let at):
             guard status.phase == .recording, isCurrent(at) else { throw invalidStateError() }
             beginStopping(at: at)
 
-        case let .writerFinished(metadata):
+        case .writerFinished(let metadata):
             guard status.phase == .stopping, isCurrent(metadata.createdAt) else { throw invalidStateError() }
             lastEventAt = metadata.createdAt
             status = RecordingStatus(
@@ -119,13 +119,13 @@ public struct RecordingStateMachine: Sendable {
                 failureCode: nil
             )
 
-        case let .failed(code, at):
+        case .failed(let code, let at):
             guard [.starting, .recording, .stopping].contains(status.phase), isCurrent(at) else {
                 throw invalidStateError()
             }
             fail(code: code, at: at)
 
-        case let .permissionTimedOut(at):
+        case .permissionTimedOut(let at):
             guard
                 status.phase == .starting,
                 isCurrent(at),
@@ -134,7 +134,7 @@ public struct RecordingStateMachine: Sendable {
             else { throw invalidStateError() }
             fail(code: AppErrorCode.recordingPermissionTimeout.rawValue, at: at)
 
-        case let .stopTimedOut(at):
+        case .stopTimedOut(let at):
             guard
                 status.phase == .stopping,
                 isCurrent(at),
@@ -143,7 +143,7 @@ public struct RecordingStateMachine: Sendable {
             else { throw invalidStateError() }
             fail(code: AppErrorCode.requestTimeout.rawValue, at: at)
 
-        case let .maximumDurationReached(at):
+        case .maximumDurationReached(let at):
             guard
                 status.phase == .recording,
                 isCurrent(at),
@@ -153,7 +153,7 @@ public struct RecordingStateMachine: Sendable {
             else { throw invalidStateError() }
             beginStopping(at: at)
 
-        case let .downloadedAndDeleted(id):
+        case .downloadedAndDeleted(let id):
             guard status.phase == .ready, status.recording?.id == id else { throw invalidStateError() }
             clearToIdle()
 

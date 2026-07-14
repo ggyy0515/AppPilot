@@ -93,7 +93,8 @@ public struct HTTPRequestParser: Sendable {
                 throw HTTPParseError.malformedRequest
             }
             guard line.filter({ $0 == ":" }).count == 1,
-                  let colon = line.firstIndex(of: ":") else {
+                let colon = line.firstIndex(of: ":")
+            else {
                 throw HTTPParseError.malformedRequest
             }
             let name = String(line[..<colon])
@@ -123,17 +124,17 @@ public struct HTTPRequestParser: Sendable {
             return 0
         }
         guard !value.isEmpty,
-              value.allSatisfy({ $0.isASCII && $0.isNumber }),
-              let length = Int(value)
+            value.allSatisfy({ $0.isASCII && $0.isNumber }),
+            let length = Int(value)
         else { throw HTTPParseError.malformedRequest }
         return length
     }
 
     private func isValidPath(_ path: String) -> Bool {
         guard path.hasPrefix("/"), !path.hasPrefix("//"), path != "/",
-              !path.hasSuffix("/"), !path.contains("?"), !path.contains("#")
+            !path.hasSuffix("/"), !path.contains("?"), !path.contains("#")
         else { return false }
-        return !path.dropFirst().split(separator: "/", omittingEmptySubsequences: false).contains(where: \ .isEmpty)
+        return !path.dropFirst().split(separator: "/", omittingEmptySubsequences: false).contains(where: \.isEmpty)
     }
 
     private func isValidHeaderName(_ name: String) -> Bool {

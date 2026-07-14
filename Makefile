@@ -17,7 +17,21 @@ SHARE_ROOT := $(PREFIX)/share/ios-debug
 PACKAGE_INSTALL := $(SHARE_ROOT)/IOSDebugKit
 SKILL_INSTALL := $(CODEX_HOME)/skills/sx-ios-debug
 
-.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated clean
+.PHONY: fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
+
+fmt-check:
+	@test -z "$$(gofmt -l cli)" || { gofmt -l cli; exit 1; }
+	@cd swift/IOSDebugKit && $(SWIFT) format lint --recursive --strict \
+		--configuration .swift-format Package.swift Sources Tests
+
+go-vet:
+	@cd cli && $(GO) vet ./...
+
+go-test:
+	@cd cli && $(GO) test ./...
+
+swift-test:
+	@$(SWIFT) test --package-path swift/IOSDebugKit
 
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
@@ -108,5 +122,15 @@ install-smoke-isolated: local-install-safety-test
 	test -f "$$tmp/Project/.ios-debug/artifacts/keep.txt"; \
 	echo "PASS: install-uninstall-isolated"
 
+verify: fmt-check go-vet go-test swift-test build-cli scaffold-smoke \
+	demo-test demo-debug demo-release simulator-e2e release-scan \
+	validate-skill check-docs install-smoke-isolated device-smoke
+	@echo "PASS: make verify"
+
+verify-device: verify
+	@IOS_DEBUG_REAL_DEVICE_SMOKE=1 ./scripts/device-smoke.sh
+
 clean:
 	@./scripts/clean-build.sh "$(CURDIR)" "$(BUILD_DIR)"
+	@$(SWIFT) package --package-path swift/IOSDebugKit reset
+	@rm -rf -- "$(CURDIR)/swift/IOSDebugKit/.swiftpm"

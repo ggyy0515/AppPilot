@@ -57,21 +57,22 @@ private struct DebugActionLifecycleView<Content: View>: View {
     }
 }
 
-public extension View {
-    func iosDebugAction(
+extension View {
+    public func iosDebugAction(
         _ identifier: String,
         role: DebugActionRole,
         description: String,
         isEnabled: @escaping @MainActor () -> Bool = { true },
         perform: @escaping @MainActor () async throws -> Void
     ) -> some View {
-        modifier(DebugActionLifecycleModifier(
-            identifier: identifier,
-            role: role,
-            description: description,
-            isEnabled: isEnabled,
-            perform: perform
-        ))
+        modifier(
+            DebugActionLifecycleModifier(
+                identifier: identifier,
+                role: role,
+                description: description,
+                isEnabled: isEnabled,
+                perform: perform
+            ))
     }
 }
 #endif

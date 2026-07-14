@@ -7,7 +7,8 @@ tmp="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-scaffold.XXXXXX")"
 tmp="$(cd "$tmp" && pwd -P)"
 trap 'rm -rf "$tmp"' EXIT
 project="$tmp/Project"
-mkdir -p "$project"
+smoke_home="$tmp/home"
+mkdir -p "$project" "$smoke_home"
 project="$(cd "$project" && pwd -P)"
 
 show_capture() {
@@ -28,7 +29,7 @@ run_or_die() {
   shift
   local status
   set +e
-  env -u IOS_DEBUG_TOKEN "$@" >"$output" 2>"$output.stderr"
+  env -u IOS_DEBUG_TOKEN HOME="$smoke_home" "$@" >"$output" 2>"$output.stderr"
   status=$?
   set -e
   if [ "$status" -ne 0 ]; then
@@ -44,7 +45,7 @@ run_expect_status() {
   shift 2
   local status
   set +e
-  env -u IOS_DEBUG_TOKEN "$@" >"$output" 2>"$output.stderr"
+  env -u IOS_DEBUG_TOKEN HOME="$smoke_home" "$@" >"$output" 2>"$output.stderr"
   status=$?
   set -e
   if [ "$status" -ne "$expected" ]; then

@@ -1,6 +1,6 @@
 import Foundation
-import Testing
 import IOSDebugCore
+import Testing
 
 @Test func bootstrapTemplateHasStableEntryPoint() throws {
     let packageRoot = URL(fileURLWithPath: #filePath)
@@ -29,160 +29,161 @@ import IOSDebugCore
         .deletingLastPathComponent()
     let templateURL = packageRoot.appending(path: "Templates/IOSDebugBootstrap.swift")
     var template = try String(contentsOf: templateURL, encoding: .utf8)
-    template = template
+    template =
+        template
         .replacingOccurrences(of: "import Foundation\n", with: "")
         .replacingOccurrences(of: "import IOSDebugCore\n", with: "")
         .replacingOccurrences(of: "import IOSDebugKit\n", with: "")
 
     let harness = #"""
-    import Foundation
+        import Foundation
 
-    indirect enum JSONValue {
-        case object([String: JSONValue])
-        case string(String)
-        case bool(Bool)
-    }
-
-    @MainActor protocol DebugStateProvider: AnyObject {
-        func debugState() throws -> JSONValue
-    }
-
-    enum HarnessFailure: Error {
-        case requested
-    }
-
-    @MainActor final class IOSDebugRuntime {
-        struct Configuration {
-            init(bearerToken: String?) throws {}
+        indirect enum JSONValue {
+            case object([String: JSONValue])
+            case string(String)
+            case bool(Bool)
         }
 
-        static var startCount = 0
-        static var stopCount = 0
-        static var failNextStart = false
-        static var blockStarts = false
-        static var blockStops = false
-        static var startWaiters: [CheckedContinuation<Void, Never>] = []
-        static var stopWaiters: [CheckedContinuation<Void, Never>] = []
+        @MainActor protocol DebugStateProvider: AnyObject {
+            func debugState() throws -> JSONValue
+        }
 
-        init(configuration: Configuration, stateProvider: any DebugStateProvider) {}
+        enum HarnessFailure: Error {
+            case requested
+        }
 
-        func start() async throws {
-            Self.startCount += 1
-            if Self.failNextStart {
-                Self.failNextStart = false
-                throw HarnessFailure.requested
+        @MainActor final class IOSDebugRuntime {
+            struct Configuration {
+                init(bearerToken: String?) throws {}
             }
-            if Self.blockStarts {
-                await withCheckedContinuation { continuation in
-                    Self.startWaiters.append(continuation)
+
+            static var startCount = 0
+            static var stopCount = 0
+            static var failNextStart = false
+            static var blockStarts = false
+            static var blockStops = false
+            static var startWaiters: [CheckedContinuation<Void, Never>] = []
+            static var stopWaiters: [CheckedContinuation<Void, Never>] = []
+
+            init(configuration: Configuration, stateProvider: any DebugStateProvider) {}
+
+            func start() async throws {
+                Self.startCount += 1
+                if Self.failNextStart {
+                    Self.failNextStart = false
+                    throw HarnessFailure.requested
+                }
+                if Self.blockStarts {
+                    await withCheckedContinuation { continuation in
+                        Self.startWaiters.append(continuation)
+                    }
                 }
             }
-        }
 
-        func stop() async {
-            Self.stopCount += 1
-            if Self.blockStops {
-                await withCheckedContinuation { continuation in
-                    Self.stopWaiters.append(continuation)
+            func stop() async {
+                Self.stopCount += 1
+                if Self.blockStops {
+                    await withCheckedContinuation { continuation in
+                        Self.stopWaiters.append(continuation)
+                    }
                 }
             }
-        }
 
-        static func reset() {
-            startCount = 0
-            stopCount = 0
-            failNextStart = false
-            blockStarts = false
-            blockStops = false
-            startWaiters = []
-            stopWaiters = []
-        }
+            static func reset() {
+                startCount = 0
+                stopCount = 0
+                failNextStart = false
+                blockStarts = false
+                blockStops = false
+                startWaiters = []
+                stopWaiters = []
+            }
 
-        static func releaseStarts() {
-            blockStarts = false
-            let waiters = startWaiters
-            startWaiters = []
-            waiters.forEach { $0.resume() }
-        }
+            static func releaseStarts() {
+                blockStarts = false
+                let waiters = startWaiters
+                startWaiters = []
+                waiters.forEach { $0.resume() }
+            }
 
-        static func releaseStops() {
-            blockStops = false
-            let waiters = stopWaiters
-            stopWaiters = []
-            waiters.forEach { $0.resume() }
+            static func releaseStops() {
+                blockStops = false
+                let waiters = stopWaiters
+                stopWaiters = []
+                waiters.forEach { $0.resume() }
+            }
         }
-    }
-    """#
+        """#
 
     let main = #"""
 
-    @main
-    @MainActor
-    struct HarnessMain {
-        static func waitForStarts(_ count: Int) async {
-            while IOSDebugRuntime.startCount < count { await Task.yield() }
-        }
+        @main
+        @MainActor
+        struct HarnessMain {
+            static func waitForStarts(_ count: Int) async {
+                while IOSDebugRuntime.startCount < count { await Task.yield() }
+            }
 
-        static func waitForStops(_ count: Int) async {
-            while IOSDebugRuntime.stopCount < count { await Task.yield() }
-        }
+            static func waitForStops(_ count: Int) async {
+                while IOSDebugRuntime.stopCount < count { await Task.yield() }
+            }
 
-        static func require(_ condition: @autoclosure () -> Bool, _ message: String) {
-            guard condition() else { fatalError(message) }
-        }
+            static func require(_ condition: @autoclosure () -> Bool, _ message: String) {
+                guard condition() else { fatalError(message) }
+            }
 
-        static func main() async throws {
-            IOSDebugRuntime.reset()
-            IOSDebugRuntime.blockStarts = true
-            let first = Task { @MainActor in try await IOSDebugBootstrap.start() }
-            await waitForStarts(1)
-            let second = Task { @MainActor in try await IOSDebugBootstrap.start() }
-            for _ in 0..<20 { await Task.yield() }
-            IOSDebugRuntime.releaseStarts()
-            try await first.value
-            try await second.value
-            require(IOSDebugRuntime.startCount == 1, "concurrent start created multiple runtimes")
-            await IOSDebugBootstrap.stop()
-            require(IOSDebugRuntime.stopCount == 1, "shared runtime was not stopped exactly once")
+            static func main() async throws {
+                IOSDebugRuntime.reset()
+                IOSDebugRuntime.blockStarts = true
+                let first = Task { @MainActor in try await IOSDebugBootstrap.start() }
+                await waitForStarts(1)
+                let second = Task { @MainActor in try await IOSDebugBootstrap.start() }
+                for _ in 0..<20 { await Task.yield() }
+                IOSDebugRuntime.releaseStarts()
+                try await first.value
+                try await second.value
+                require(IOSDebugRuntime.startCount == 1, "concurrent start created multiple runtimes")
+                await IOSDebugBootstrap.stop()
+                require(IOSDebugRuntime.stopCount == 1, "shared runtime was not stopped exactly once")
 
-            IOSDebugRuntime.reset()
-            IOSDebugRuntime.failNextStart = true
-            do {
+                IOSDebugRuntime.reset()
+                IOSDebugRuntime.failNextStart = true
+                do {
+                    try await IOSDebugBootstrap.start()
+                    fatalError("requested start failure did not propagate")
+                } catch HarnessFailure.requested {}
                 try await IOSDebugBootstrap.start()
-                fatalError("requested start failure did not propagate")
-            } catch HarnessFailure.requested {}
-            try await IOSDebugBootstrap.start()
-            require(IOSDebugRuntime.startCount == 2, "failed start did not roll back for retry")
-            await IOSDebugBootstrap.stop()
+                require(IOSDebugRuntime.startCount == 2, "failed start did not roll back for retry")
+                await IOSDebugBootstrap.stop()
 
-            IOSDebugRuntime.reset()
-            IOSDebugRuntime.blockStarts = true
-            let starting = Task { @MainActor in try await IOSDebugBootstrap.start() }
-            await waitForStarts(1)
-            let stopping = Task { @MainActor in await IOSDebugBootstrap.stop() }
-            for _ in 0..<20 { await Task.yield() }
-            IOSDebugRuntime.releaseStarts()
-            await stopping.value
-            try await starting.value
-            require(IOSDebugRuntime.stopCount == 1, "stop during start returned before runtime shutdown")
-            try await IOSDebugBootstrap.start()
-            require(IOSDebugRuntime.startCount == 2, "stop during start left a retained runtime")
-            await IOSDebugBootstrap.stop()
+                IOSDebugRuntime.reset()
+                IOSDebugRuntime.blockStarts = true
+                let starting = Task { @MainActor in try await IOSDebugBootstrap.start() }
+                await waitForStarts(1)
+                let stopping = Task { @MainActor in await IOSDebugBootstrap.stop() }
+                for _ in 0..<20 { await Task.yield() }
+                IOSDebugRuntime.releaseStarts()
+                await stopping.value
+                try await starting.value
+                require(IOSDebugRuntime.stopCount == 1, "stop during start returned before runtime shutdown")
+                try await IOSDebugBootstrap.start()
+                require(IOSDebugRuntime.startCount == 2, "stop during start left a retained runtime")
+                await IOSDebugBootstrap.stop()
 
-            IOSDebugRuntime.reset()
-            try await IOSDebugBootstrap.start()
-            IOSDebugRuntime.blockStops = true
-            let firstStop = Task { @MainActor in await IOSDebugBootstrap.stop() }
-            await waitForStops(1)
-            let secondStop = Task { @MainActor in await IOSDebugBootstrap.stop() }
-            for _ in 0..<20 { await Task.yield() }
-            IOSDebugRuntime.releaseStops()
-            await firstStop.value
-            await secondStop.value
-            require(IOSDebugRuntime.stopCount == 1, "concurrent stop was not idempotent")
+                IOSDebugRuntime.reset()
+                try await IOSDebugBootstrap.start()
+                IOSDebugRuntime.blockStops = true
+                let firstStop = Task { @MainActor in await IOSDebugBootstrap.stop() }
+                await waitForStops(1)
+                let secondStop = Task { @MainActor in await IOSDebugBootstrap.stop() }
+                for _ in 0..<20 { await Task.yield() }
+                IOSDebugRuntime.releaseStops()
+                await firstStop.value
+                await secondStop.value
+                require(IOSDebugRuntime.stopCount == 1, "concurrent stop was not idempotent")
+            }
         }
-    }
-    """#
+        """#
 
     let temporaryDirectory = FileManager.default.temporaryDirectory
         .appending(path: "IOSDebugBootstrapTests-\(UUID().uuidString)", directoryHint: .isDirectory)

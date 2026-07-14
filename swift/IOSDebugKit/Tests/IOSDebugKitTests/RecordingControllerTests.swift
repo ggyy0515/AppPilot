@@ -100,13 +100,18 @@ private struct FakeFailure: Error {}
 private func makeSampleBuffer(timestamp: Int64) -> CMSampleBuffer? {
     var pixelBuffer: CVPixelBuffer?
     guard CVPixelBufferCreate(nil, 2, 2, kCVPixelFormatType_32BGRA, nil, &pixelBuffer) == kCVReturnSuccess,
-          let pixelBuffer else { return nil }
+        let pixelBuffer
+    else { return nil }
     var format: CMVideoFormatDescription?
     guard CMVideoFormatDescriptionCreateForImageBuffer(allocator: nil, imageBuffer: pixelBuffer, formatDescriptionOut: &format) == noErr,
-          let format else { return nil }
+        let format
+    else { return nil }
     var timing = CMSampleTimingInfo(duration: .invalid, presentationTimeStamp: CMTime(value: timestamp, timescale: 1), decodeTimeStamp: .invalid)
     var sample: CMSampleBuffer?
-    guard CMSampleBufferCreateReadyWithImageBuffer(allocator: nil, imageBuffer: pixelBuffer, formatDescription: format, sampleTiming: &timing, sampleBufferOut: &sample) == noErr else { return nil }
+    guard
+        CMSampleBufferCreateReadyWithImageBuffer(
+            allocator: nil, imageBuffer: pixelBuffer, formatDescription: format, sampleTiming: &timing, sampleBufferOut: &sample) == noErr
+    else { return nil }
     return sample
 }
 
@@ -680,7 +685,8 @@ func rejectsEveryDurationOutsideInclusiveOneToSixHundredSeconds(_ duration: Dura
     for index in 0..<5 {
         let id = "ready-\(index)"
         try Data("mp4".utf8).write(to: store.appendingPathComponent("\(id).mp4"))
-        let metadata = RecordingMetadata(id: id, byteCount: 3, durationMilliseconds: 1, sha256: SHA256.hexDigest(Data("mp4".utf8)), createdAt: .init(milliseconds: Int64(index)))
+        let metadata = RecordingMetadata(
+            id: id, byteCount: 3, durationMilliseconds: 1, sha256: SHA256.hexDigest(Data("mp4".utf8)), createdAt: .init(milliseconds: Int64(index)))
         try JSONEncoder().encode(metadata).write(to: store.appendingPathComponent("\(id).json"))
     }
 

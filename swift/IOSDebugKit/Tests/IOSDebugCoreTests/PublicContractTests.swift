@@ -1,29 +1,35 @@
 import Foundation
-import Testing
 import IOSDebugCore
+import Testing
 
 @Suite struct PublicContractTests {
     @Test func frozenProtocolEnvelopesDecodeAndEncodeWithoutDrift() throws {
         let successFixture = Data(#"{"data":{"ready":true},"meta":{"protocol_version":1,"request_id":"req-fixture"},"ok":true}"#.utf8)
-        let failureFixture = Data(#"{"error":{"code":"auth_failed","hint":"Retry.","message":"Denied."},"meta":{"protocol_version":1,"request_id":"req-fixture"},"ok":false}"#.utf8)
+        let failureFixture = Data(
+            #"{"error":{"code":"auth_failed","hint":"Retry.","message":"Denied."},"meta":{"protocol_version":1,"request_id":"req-fixture"},"ok":false}"#.utf8)
 
         let success = try JSONDecoder().decode(JSONValue.self, from: successFixture)
         let failure = try JSONDecoder().decode(JSONValue.self, from: failureFixture)
-        #expect(success == .object([
-            "data": .object(["ready": .bool(true)]),
-            "meta": .object(["protocol_version": .number(1), "request_id": .string("req-fixture")]),
-            "ok": .bool(true),
-        ]))
-        #expect(failure == .object([
-            "error": .object(["code": .string("auth_failed"), "hint": .string("Retry."), "message": .string("Denied.")]),
-            "meta": .object(["protocol_version": .number(1), "request_id": .string("req-fixture")]),
-            "ok": .bool(false),
-        ]))
+        #expect(
+            success
+                == .object([
+                    "data": .object(["ready": .bool(true)]),
+                    "meta": .object(["protocol_version": .number(1), "request_id": .string("req-fixture")]),
+                    "ok": .bool(true),
+                ]))
+        #expect(
+            failure
+                == .object([
+                    "error": .object(["code": .string("auth_failed"), "hint": .string("Retry."), "message": .string("Denied.")]),
+                    "meta": .object(["protocol_version": .number(1), "request_id": .string("req-fixture")]),
+                    "ok": .bool(false),
+                ]))
         #expect(try ProtocolJSON.success(data: .object(["ready": .bool(true)]), requestID: "req-fixture") == successFixture)
-        #expect(try ProtocolJSON.failure(
-            error: ProtocolError(code: "auth_failed", message: "Denied.", hint: "Retry."),
-            requestID: "req-fixture"
-        ) == failureFixture)
+        #expect(
+            try ProtocolJSON.failure(
+                error: ProtocolError(code: "auth_failed", message: "Denied.", hint: "Retry."),
+                requestID: "req-fixture"
+            ) == failureFixture)
     }
 
     @Test func protocolConstantsAndOwnedErrorCodesStayFrozen() {
@@ -37,12 +43,13 @@ import IOSDebugCore
         #expect(SHA256.hexDigest(Data("abc".utf8)) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
 
         let ownedCodes = AppErrorCode.allCases.map(\.rawValue)
-        #expect(ownedCodes == [
-            "config_invalid", "app_not_reachable", "request_timeout", "protocol_mismatch",
-            "auth_required", "auth_failed", "action_not_found", "action_disabled", "action_failed",
-            "state_encoding_failed", "screenshot_failed", "recording_not_available",
-            "recording_invalid_state", "recording_permission_timeout", "artifact_too_large",
-        ])
+        #expect(
+            ownedCodes == [
+                "config_invalid", "app_not_reachable", "request_timeout", "protocol_mismatch",
+                "auth_required", "auth_failed", "action_not_found", "action_disabled", "action_failed",
+                "state_encoding_failed", "screenshot_failed", "recording_not_available",
+                "recording_invalid_state", "recording_permission_timeout", "artifact_too_large",
+            ])
         #expect(ownedCodes.count == 15)
     }
 
@@ -130,9 +137,10 @@ import IOSDebugCore
         #expect(protocolError.code == "auth_failed")
         #expect(protocolError.message == "Denied.")
         #expect(protocolError.hint == "Retry.")
-        #expect([RecordingPhase.idle, .starting, .recording, .stopping, .ready, .failed].map(\.rawValue) == [
-            "idle", "starting", "recording", "stopping", "ready", "failed",
-        ])
+        #expect(
+            [RecordingPhase.idle, .starting, .recording, .stopping, .ready, .failed].map(\.rawValue) == [
+                "idle", "starting", "recording", "stopping", "ready", "failed",
+            ])
         let events: [RecordingEvent] = [
             .startRequested(at: zero, maximumDuration: oneSecond), .captureStarted(at: zero),
             .stopRequested(at: zero), .writerFinished(metadata), .failed(code: "failure", at: zero),

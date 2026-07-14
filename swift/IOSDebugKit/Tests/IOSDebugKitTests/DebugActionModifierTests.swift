@@ -77,12 +77,13 @@ struct DebugActionModifierTests {
         let identifier = "modifier.identity.\(UUID().uuidString)"
         let firstState = ActionState()
         let replacementState = ActionState()
-        let host = HostedActionView(view: MarkedActionView(
-            identifier: identifier,
-            role: .navigation,
-            actionDescription: "First contract",
-            state: firstState
-        ))
+        let host = HostedActionView(
+            view: MarkedActionView(
+                identifier: identifier,
+                role: .navigation,
+                actionDescription: "First contract",
+                state: firstState
+            ))
         await waitUntil("first contract registration") {
             registry.snapshot().actions.first(where: { $0.identifier == identifier }) != nil
         }
@@ -90,12 +91,13 @@ struct DebugActionModifierTests {
             registry.snapshot().actions.first(where: { $0.identifier == identifier })?.generation
         )
 
-        host.update(MarkedActionView(
-            identifier: identifier,
-            role: .destructive,
-            actionDescription: "Replacement contract",
-            state: replacementState
-        ))
+        host.update(
+            MarkedActionView(
+                identifier: identifier,
+                role: .destructive,
+                actionDescription: "Replacement contract",
+                state: replacementState
+            ))
         await waitUntil("replacement contract registration") {
             registry.snapshot().actions.first(where: { $0.identifier == identifier })?.description == "Replacement contract"
         }
@@ -126,12 +128,13 @@ struct DebugActionModifierTests {
         let identifier = "modifier.lifecycle.\(UUID().uuidString)"
         let firstState = ActionState()
         let secondState = ActionState()
-        let first = HostedActionView(view: MarkedActionView(
-            identifier: identifier,
-            role: .navigation,
-            actionDescription: "First action",
-            state: firstState
-        ))
+        let first = HostedActionView(
+            view: MarkedActionView(
+                identifier: identifier,
+                role: .navigation,
+                actionDescription: "First action",
+                state: firstState
+            ))
         await waitUntil("first registration") {
             registry.snapshot().actions.first(where: { $0.identifier == identifier }) != nil
         }
@@ -139,21 +142,23 @@ struct DebugActionModifierTests {
             registry.snapshot().actions.first(where: { $0.identifier == identifier })?.generation
         )
 
-        first.update(MarkedActionView(
-            identifier: identifier,
-            role: .navigation,
-            actionDescription: "First action",
-            state: firstState
-        ))
+        first.update(
+            MarkedActionView(
+                identifier: identifier,
+                role: .navigation,
+                actionDescription: "First action",
+                state: firstState
+            ))
         await Task.yield()
         #expect(registry.snapshot().actions.first(where: { $0.identifier == identifier })?.generation == firstGeneration)
 
-        let replacement = HostedActionView(view: MarkedActionView(
-            identifier: identifier,
-            role: .destructive,
-            actionDescription: "Replacement action",
-            state: secondState
-        ))
+        let replacement = HostedActionView(
+            view: MarkedActionView(
+                identifier: identifier,
+                role: .destructive,
+                actionDescription: "Replacement action",
+                state: secondState
+            ))
         await waitUntil("replacement registration") {
             registry.snapshot().actions.first(where: { $0.identifier == identifier })?.description == "Replacement action"
         }
@@ -175,12 +180,13 @@ struct DebugActionModifierTests {
         let registry = DebugActionRegistry.shared
         let identifier = "modifier.dynamic.\(UUID().uuidString)"
         let state = ActionState()
-        let host = HostedActionView(view: MarkedActionView(
-            identifier: identifier,
-            role: .mutation,
-            actionDescription: "Dynamic action",
-            state: state
-        ))
+        let host = HostedActionView(
+            view: MarkedActionView(
+                identifier: identifier,
+                role: .mutation,
+                actionDescription: "Dynamic action",
+                state: state
+            ))
         await waitUntil("dynamic registration") {
             registry.snapshot().actions.first(where: { $0.identifier == identifier }) != nil
         }

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import IOSDebugCore
 
 @Test func parsesFragmentedRequest() throws {
@@ -33,7 +34,8 @@ func rejectsUnsupportedMethods(_ method: String) {
     var accepted = HTTPRequestParser()
     #expect(try accepted.append(Data(acceptedWire.utf8))?.path == "/v1/health")
 
-    let rejectedWire = "GET /v1/health HTTP/1.1\r\nX-Padding: \(String(repeating: "a", count: IOSDebugProtocol.maximumHeaderBytes - fixed.utf8.count + 1))\r\n\r\n"
+    let rejectedWire =
+        "GET /v1/health HTTP/1.1\r\nX-Padding: \(String(repeating: "a", count: IOSDebugProtocol.maximumHeaderBytes - fixed.utf8.count + 1))\r\n\r\n"
     var rejected = HTTPRequestParser()
     #expect(throws: HTTPParseError.headerTooLarge) {
         try rejected.append(Data(rejectedWire.utf8))

@@ -59,10 +59,12 @@ public final class DebugActionRegistry {
         isEnabled: @escaping @MainActor () -> Bool = { true },
         perform: @escaping @MainActor () async throws -> Void
     ) throws -> DebugActionToken {
-        guard identifier.range(
-            of: #"^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)+$"#,
-            options: .regularExpression
-        ) != nil else {
+        guard
+            identifier.range(
+                of: #"^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)+$"#,
+                options: .regularExpression
+            ) != nil
+        else {
             throw ProtocolError(
                 code: AppErrorCode.configInvalid.rawValue,
                 message: "Action identifier is invalid.",

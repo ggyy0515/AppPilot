@@ -23,10 +23,12 @@ private final class ControlledKeyWindow: UIWindow {
     key.isHidden = false
     key.controlledIsKeyWindow = true
     var selected: UIWindow?
-    let capture = ScreenshotCapture(windows: { [fallback, key] }, render: { window, _ in
-        selected = window
-        return true
-    })
+    let capture = ScreenshotCapture(
+        windows: { [fallback, key] },
+        render: { window, _ in
+            selected = window
+            return true
+        })
 
     _ = try capture.capture()
 
@@ -46,10 +48,12 @@ private final class ControlledKeyWindow: UIWindow {
     let visible = UIWindow(frame: CGRect(x: 0, y: 0, width: 8, height: 9))
     visible.isHidden = false
     var selected: UIWindow?
-    let capture = ScreenshotCapture(windows: { [hidden, transparent, system, visible] }, render: { window, _ in
-        selected = window
-        return true
-    })
+    let capture = ScreenshotCapture(
+        windows: { [hidden, transparent, system, visible] },
+        render: { window, _ in
+            selected = window
+            return true
+        })
 
     _ = try capture.capture()
 
@@ -60,10 +64,12 @@ private final class ControlledKeyWindow: UIWindow {
     let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 10, height: 20))
     window.isHidden = false
     var calls: [ScreenshotCaptureMethod] = []
-    let capture = ScreenshotCapture(windows: { [window] }, render: { _, method in
-        calls.append(method)
-        return true
-    })
+    let capture = ScreenshotCapture(
+        windows: { [window] },
+        render: { _, method in
+            calls.append(method)
+            return true
+        })
 
     let result = try capture.capture()
 
@@ -75,10 +81,12 @@ private final class ControlledKeyWindow: UIWindow {
     let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 10, height: 20))
     window.isHidden = false
     var calls: [ScreenshotCaptureMethod] = []
-    let capture = ScreenshotCapture(windows: { [window] }, render: { _, method in
-        calls.append(method)
-        return method == .layerRender
-    })
+    let capture = ScreenshotCapture(
+        windows: { [window] },
+        render: { _, method in
+            calls.append(method)
+            return method == .layerRender
+        })
 
     let result = try capture.capture()
 
@@ -130,7 +138,10 @@ private final class ControlledKeyWindow: UIWindow {
     var calls: [ScreenshotCaptureMethod] = []
     let capture = ScreenshotCapture(
         windows: { [window] },
-        render: { _, method in calls.append(method); return true },
+        render: { _, method in
+            calls.append(method)
+            return true
+        },
         pngData: { _ in Data("not-png".utf8) }
     )
 

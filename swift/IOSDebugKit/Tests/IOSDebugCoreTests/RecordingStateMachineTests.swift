@@ -1,4 +1,5 @@
 import Testing
+
 @testable import IOSDebugCore
 
 @Suite struct RecordingStateMachineTests {
@@ -16,12 +17,14 @@ import Testing
         try machine.apply(.captureStarted(at: .seconds(1)))
         try machine.apply(.stopRequested(at: .seconds(2)))
         try machine.apply(.writerFinished(metadata))
-        #expect(machine.status == RecordingStatus(
-            phase: .ready,
-            elapsedMilliseconds: 1_000,
-            recording: metadata,
-            failureCode: nil
-        ))
+        #expect(
+            machine.status
+                == RecordingStatus(
+                    phase: .ready,
+                    elapsedMilliseconds: 1_000,
+                    recording: metadata,
+                    failureCode: nil
+                ))
         try machine.apply(.downloadedAndDeleted(id: "rec-1"))
         #expect(machine.status.phase == .idle)
     }

@@ -147,8 +147,7 @@ public actor NetworkDebugServer {
         let continuations = startContinuations
         startContinuations.removeAll()
         for continuation in continuations {
-            if let error { continuation.resume(throwing: error) }
-            else { continuation.resume() }
+            if let error { continuation.resume(throwing: error) } else { continuation.resume() }
         }
     }
 
@@ -259,13 +258,15 @@ public actor NetworkDebugServer {
 
     private func send(_ data: Data, over connection: NWConnection) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-            connection.send(content: data, completion: .contentProcessed { error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
-            })
+            connection.send(
+                content: data,
+                completion: .contentProcessed { error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
+                })
         }
     }
 

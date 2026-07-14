@@ -11,10 +11,12 @@ import Testing
     let parameters = try NetworkDebugServer.parameters(port: port)
 
     #expect(parameters.allowLocalEndpointReuse)
-    #expect(parameters.requiredLocalEndpoint == .hostPort(
-        host: .ipv4(.loopback),
-        port: NWEndpoint.Port(rawValue: port)!
-    ))
+    #expect(
+        parameters.requiredLocalEndpoint
+            == .hostPort(
+                host: .ipv4(.loopback),
+                port: NWEndpoint.Port(rawValue: port)!
+            ))
 }
 
 @Test func concurrentStartsShareOneListenerStartAndBothResumeAtReady() async throws {
@@ -263,8 +265,9 @@ private func nonLoopbackIPv4Address() -> sockaddr_in? {
     while let interface = cursor {
         defer { cursor = interface.pointee.ifa_next }
         guard let address = interface.pointee.ifa_addr,
-              address.pointee.sa_family == sa_family_t(AF_INET),
-              interface.pointee.ifa_flags & UInt32(IFF_LOOPBACK) == 0 else { continue }
+            address.pointee.sa_family == sa_family_t(AF_INET),
+            interface.pointee.ifa_flags & UInt32(IFF_LOOPBACK) == 0
+        else { continue }
         return address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
     }
     return nil
@@ -301,10 +304,11 @@ private struct TestHTTPClient: Sendable {
 
     private func send(_ data: Data, over connection: NWConnection) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-            connection.send(content: data, completion: .contentProcessed { error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume() }
-            })
+            connection.send(
+                content: data,
+                completion: .contentProcessed { error in
+                    if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+                })
         }
     }
 
@@ -312,8 +316,7 @@ private struct TestHTTPClient: Sendable {
         try await withCheckedThrowingContinuation { continuation in
             connection.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) {
                 data, _, complete, error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume(returning: (data, complete)) }
+                if let error { continuation.resume(throwing: error) } else { continuation.resume(returning: (data, complete)) }
             }
         }
     }
@@ -369,10 +372,11 @@ private final class TestOpenConnection: @unchecked Sendable {
 
     func send(_ data: Data) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-            connection.send(content: data, completion: .contentProcessed { error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume() }
-            })
+            connection.send(
+                content: data,
+                completion: .contentProcessed { error in
+                    if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+                })
         }
     }
 
@@ -419,15 +423,17 @@ private func splitResponse(_ response: Data) throws -> (String, Data) {
 
 private func errorCode(in value: JSONValue) -> String? {
     guard case .object(let root) = value,
-          case .object(let error) = root["error"],
-          case .string(let code) = error["code"] else { return nil }
+        case .object(let error) = root["error"],
+        case .string(let code) = error["code"]
+    else { return nil }
     return code
 }
 
 private func errorHint(in value: JSONValue) -> String? {
     guard case .object(let root) = value,
-          case .object(let error) = root["error"],
-          case .string(let hint) = error["hint"] else { return nil }
+        case .object(let error) = root["error"],
+        case .string(let hint) = error["hint"]
+    else { return nil }
     return hint
 }
 #endif

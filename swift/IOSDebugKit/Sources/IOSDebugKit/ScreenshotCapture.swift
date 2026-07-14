@@ -95,11 +95,11 @@ public struct CapturedScreenshot: Sendable, Equatable {
         }
         guard succeeded else { return nil }
         guard let cgImage = image.cgImage,
-              cgImage.width > 0,
-              cgImage.height > 0,
-              let data = pngData(image),
-              data.count <= IOSDebugProtocol.maximumPNGBytes,
-              data.starts(with: Self.pngSignature)
+            cgImage.width > 0,
+            cgImage.height > 0,
+            let data = pngData(image),
+            data.count <= IOSDebugProtocol.maximumPNGBytes,
+            data.starts(with: Self.pngSignature)
         else {
             throw CaptureFailure.invalidImage
         }

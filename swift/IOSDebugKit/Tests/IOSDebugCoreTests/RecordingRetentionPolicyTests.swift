@@ -1,4 +1,5 @@
 import Testing
+
 @testable import IOSDebugCore
 
 @Suite struct RecordingRetentionPolicyTests {
@@ -9,9 +10,10 @@ import Testing
             entry("failed", .failed, 1),
             entry("partial-a", .stopping, 2),
         ]
-        #expect(RecordingRetentionPolicy.identifiersToDelete(now: .seconds(100), entries: entries) == [
-            "failed", "partial-a", "partial-b",
-        ])
+        #expect(
+            RecordingRetentionPolicy.identifiersToDelete(now: .seconds(100), entries: entries) == [
+                "failed", "partial-a", "partial-b",
+            ])
     }
 
     @Test func expiresReadyEntriesAtExactlyThirtyMinutes() {
@@ -31,9 +33,10 @@ import Testing
             entry("same-a", .ready, 40),
             entry("middle", .ready, 30),
         ]
-        #expect(RecordingRetentionPolicy.identifiersToDelete(now: .seconds(100), entries: entries) == [
-            "oldest", "middle",
-        ])
+        #expect(
+            RecordingRetentionPolicy.identifiersToDelete(now: .seconds(100), entries: entries) == [
+                "oldest", "middle",
+            ])
     }
 
     @Test func deletionIdentifiersAreUniqueEvenForDuplicateEntries() {
@@ -47,9 +50,10 @@ import Testing
             entry("other", .failed, 15),
             entry("shared", .failed, 20),
         ]
-        #expect(RecordingRetentionPolicy.identifiersToDelete(now: .seconds(100), entries: entries) == [
-            "other", "shared",
-        ])
+        #expect(
+            RecordingRetentionPolicy.identifiersToDelete(now: .seconds(100), entries: entries) == [
+                "other", "shared",
+            ])
     }
 
     @Test func failedAndPartialPriorityPrecedesExpiredAndOverflowBeforeFinalDeduplication() {
@@ -62,9 +66,10 @@ import Testing
             entry("keep-2", .ready, 203),
             entry("keep-3", .ready, 204),
         ]
-        #expect(RecordingRetentionPolicy.identifiersToDelete(now: .seconds(1_801), entries: entries) == [
-            "shared", "expired", "overflow",
-        ])
+        #expect(
+            RecordingRetentionPolicy.identifiersToDelete(now: .seconds(1_801), entries: entries) == [
+                "shared", "expired", "overflow",
+            ])
     }
 
     private func entry(_ identifier: String, _ phase: RecordingPhase, _ seconds: Int64) -> RecordingRetentionEntry {

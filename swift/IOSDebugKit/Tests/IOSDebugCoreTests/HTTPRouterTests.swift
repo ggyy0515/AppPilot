@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import IOSDebugCore
 
 @Suite struct HTTPRouterTests {
@@ -84,11 +85,12 @@ import Testing
 
         for method in [HTTPMethod.get, .head] {
             let missing = await router.response(to: request(method, "/v1/state"))
-            let rejected = await router.response(to: request(
-                method,
-                "/v1/state",
-                headers: ["authorization": "Bearer supplied-secret"]
-            ))
+            let rejected = await router.response(
+                to: request(
+                    method,
+                    "/v1/state",
+                    headers: ["authorization": "Bearer supplied-secret"]
+                ))
             let missingWire = String(decoding: missing.serialized(headOnly: method == .head), as: UTF8.self)
             let rejectedWire = String(decoding: rejected.serialized(headOnly: method == .head), as: UTF8.self)
 

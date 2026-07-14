@@ -10,13 +10,21 @@ public enum JSONValue: Codable, Sendable, Equatable {
 
     public init(from decoder: Decoder) throws {
         let value = try decoder.singleValueContainer()
-        if value.decodeNil() { self = .null }
-        else if let bool = try? value.decode(Bool.self) { self = .bool(bool) }
-        else if let number = try? value.decode(Double.self), number.isFinite { self = .number(number) }
-        else if let string = try? value.decode(String.self) { self = .string(string) }
-        else if let array = try? value.decode([JSONValue].self) { self = .array(array) }
-        else if let object = try? value.decode([String: JSONValue].self) { self = .object(object) }
-        else { throw DecodingError.dataCorruptedError(in: value, debugDescription: "Unsupported JSON value") }
+        if value.decodeNil() {
+            self = .null
+        } else if let bool = try? value.decode(Bool.self) {
+            self = .bool(bool)
+        } else if let number = try? value.decode(Double.self), number.isFinite {
+            self = .number(number)
+        } else if let string = try? value.decode(String.self) {
+            self = .string(string)
+        } else if let array = try? value.decode([JSONValue].self) {
+            self = .array(array)
+        } else if let object = try? value.decode([String: JSONValue].self) {
+            self = .object(object)
+        } else {
+            throw DecodingError.dataCorruptedError(in: value, debugDescription: "Unsupported JSON value")
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
