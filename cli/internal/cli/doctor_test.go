@@ -7,12 +7,34 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/danielpaulus/go-ios/ios"
 	"github.com/stretchr/testify/require"
 	"github.com/yangy003/ios-debug-system/cli/internal/config"
 	"github.com/yangy003/ios-debug-system/cli/internal/device"
 	"github.com/yangy003/ios-debug-system/cli/internal/doctor"
 )
+
+func TestBoundedUSBProbeReturnsWhenContextIsCanceled(t *testing.T) {
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	result := make(chan error, 1)
+	go func() {
+		_, err := boundedUSBProbe(ctx, func() (ios.DeviceList, error) {
+			close(entered)
+			<-release
+			return ios.DeviceList{}, nil
+		})
+		result <- err
+	}()
+	<-entered
+	cancel()
+	require.ErrorIs(t, <-result, context.Canceled)
+	close(release)
+	require.Eventually(t, func() bool { return len(usbProbeSlot) == 0 }, time.Second, time.Millisecond)
+}
 
 type doctorLocator struct{ path string }
 

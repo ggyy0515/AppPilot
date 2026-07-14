@@ -3,17 +3,25 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/danielpaulus/go-ios/ios"
 	"github.com/spf13/cobra"
 	"github.com/yangy003/ios-debug-system/cli/internal/config"
 	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ios-debug-system/cli/internal/device"
 	"github.com/yangy003/ios-debug-system/cli/internal/doctor"
+	"github.com/yangy003/ios-debug-system/cli/internal/protocol"
+	"github.com/yangy003/ios-debug-system/cli/internal/scaffold"
 	"github.com/yangy003/ios-debug-system/cli/internal/transport"
 )
 
@@ -30,6 +38,117 @@ type Dependencies struct {
 	UserHome       string
 	ExecutablePath string
 	Doctor         doctor.Dependencies
+}
+
+var usbProbeSlot = make(chan struct{}, 1)
+
+func productionUSBProbe(ctx context.Context) (int, error) {
+	return boundedUSBProbe(ctx, ios.ListDevices)
+}
+
+func boundedUSBProbe(ctx context.Context, list func() (ios.DeviceList, error)) (int, error) {
+	select {
+	case usbProbeSlot <- struct{}{}:
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	}
+	type result struct {
+		count int
+		err   error
+	}
+	completed := make(chan result, 1)
+	go func() {
+		devices, err := list()
+		<-usbProbeSlot
+		completed <- result{count: len(devices.DeviceList), err: err}
+	}()
+	select {
+	case result := <-completed:
+		return result.count, result.err
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	}
+}
+
+func NewProductionDependencies(stdout, stderr io.Writer) Dependencies {
+	workingDir, _ := os.Getwd()
+	userHome, _ := os.UserHomeDir()
+	executablePath, _ := os.Executable()
+	discoverer := device.NewDiscoverer(commandRunner{}, "")
+
+	deps := Dependencies{
+		Stdout: stdout, Stderr: stderr, LoadConfig: config.Load, Devices: discoverer,
+		NewUSB: transport.NewUSB, NewTCP: transport.NewTCP, Now: time.Now,
+		WorkingDir: workingDir, UserHome: userHome, ExecutablePath: executablePath,
+	}
+	clientFor := func(cfg config.Config, selected *device.Device) (*protocol.Client, error) {
+		var tr transport.DeviceTransport
+		var err error
+		target := protocol.Target{Port: cfg.Port}
+		if cfg.Transport == "tcp" {
+			tr, err = transport.NewTCP(cfg.TCPHost)
+		} else {
+			tr = transport.NewUSB()
+			if selected != nil {
+				target.DeviceID = selected.UDID
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+		return protocol.NewClient(tr, target, cfg.Token), nil
+	}
+	deps.Doctor = doctor.Dependencies{
+		LookPath: exec.LookPath,
+		Run: func(ctx context.Context, executable string, args ...string) ([]byte, error) {
+			return exec.CommandContext(ctx, executable, args...).Output()
+		},
+		DeviceDiscoverer: discoverer,
+		USBProbe:         productionUSBProbe,
+		TCPProbe: func(ctx context.Context, cfg config.Config) error {
+			tr, err := transport.NewTCP(cfg.TCPHost)
+			if err != nil {
+				return err
+			}
+			conn, err := tr.Dial(ctx, "", cfg.Port)
+			if err != nil {
+				return err
+			}
+			return conn.Close()
+		},
+		AppProbe: func(ctx context.Context, cfg config.Config, selected *device.Device) error {
+			client, err := clientFor(cfg, selected)
+			if err != nil {
+				return err
+			}
+			var value json.RawMessage
+			_, err = client.DoJSON(ctx, http.MethodGet, "/v1/health", nil, 1<<20, &value)
+			return err
+		},
+		ProtocolVersionProbe: func(ctx context.Context, cfg config.Config, selected *device.Device) (int, error) {
+			client, err := clientFor(cfg, selected)
+			if err != nil {
+				return 0, err
+			}
+			var health struct {
+				ProtocolVersion int `json:"protocol_version"`
+			}
+			_, err = client.DoJSON(ctx, http.MethodGet, "/v1/health", nil, 1<<20, &health)
+			return health.ProtocolVersion, err
+		},
+		CapabilitiesProbe: func(ctx context.Context, cfg config.Config, selected *device.Device) error {
+			client, err := clientFor(cfg, selected)
+			if err != nil {
+				return err
+			}
+			var value json.RawMessage
+			_, err = client.DoJSON(ctx, http.MethodGet, "/v1/capabilities", nil, 1<<20, &value)
+			return err
+		},
+		TemplateLocator: scaffold.NewLocator(executablePath, userHome),
+		ExecutablePath:  executablePath,
+	}
+	return deps
 }
 
 func NewRoot(deps Dependencies) *cobra.Command {

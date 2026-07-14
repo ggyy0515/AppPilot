@@ -75,7 +75,7 @@ func Run(ctx context.Context, deps Dependencies) (Report, error) {
 	state := &runState{secrets: append([]string(nil), deps.Secrets...)}
 	configCtx, cancelConfig := context.WithTimeout(ctx, deps.Timeout)
 	state.config, state.configErr = deps.ConfigLoader(configCtx, config.LoadOptions{})
-	configDeadlineErr := configCtx.Err()
+	configDeadlineErr := contextDeadlineError(configCtx)
 	cancelConfig()
 	if state.config.Token != "" {
 		state.secrets = append(state.secrets, state.config.Token)
@@ -99,7 +99,7 @@ func Run(ctx context.Context, deps Dependencies) (Report, error) {
 	for _, item := range checks {
 		checkCtx, cancel := context.WithTimeout(ctx, deps.Timeout)
 		result, err := item.run(checkCtx, deps, state)
-		deadlineErr := checkCtx.Err()
+		deadlineErr := contextDeadlineError(checkCtx)
 		cancel()
 		if deadlineErr != nil {
 			result = failed(item.name+" check timed out", hintForCode(contract.RequestTimeout))
@@ -117,6 +117,16 @@ func Run(ctx context.Context, deps Dependencies) (Report, error) {
 		}
 	}
 	return report, firstErr
+}
+
+func contextDeadlineError(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if deadline, ok := ctx.Deadline(); ok && !time.Now().Before(deadline) {
+		return context.DeadlineExceeded
+	}
+	return nil
 }
 
 func defaults(deps Dependencies) Dependencies {
