@@ -7,9 +7,14 @@ tmp="$(mktemp -d /tmp/ios-debug-install-safety.XXXXXX)"
 trap 'rm -rf -- "$tmp"' EXIT
 
 mkdir -p "$tmp/source/package/Templates" "$tmp/source/skill/agents"
+mkdir -p "$tmp/outside-build" "$tmp/outside-swiftpm"
 printf '#!/bin/sh\necho test-binary\n' >"$tmp/source/ios-debug"
 chmod 0755 "$tmp/source/ios-debug"
 printf 'bootstrap\n' >"$tmp/source/package/Templates/IOSDebugBootstrap.swift"
+printf 'build-sentinel\n' >"$tmp/outside-build/keep.txt"
+printf 'swiftpm-sentinel\n' >"$tmp/outside-swiftpm/keep.txt"
+ln -s "$tmp/outside-build" "$tmp/source/package/.build"
+ln -s "$tmp/outside-swiftpm" "$tmp/source/package/.swiftpm"
 printf '%s\n' '---' 'name: sx-ios-debug' 'description: Use when testing.' >"$tmp/source/skill/SKILL.md"
 printf '%s\n' 'interface:' '  display_name: "sx iOS Debug"' >"$tmp/source/skill/agents/openai.yaml"
 
@@ -78,6 +83,12 @@ run_installer "$prefix" "$codex_home"
 cmp "$tmp/source/ios-debug" "$prefix/bin/ios-debug"
 cmp "$tmp/source/package/Templates/IOSDebugBootstrap.swift" \
   "$prefix/share/ios-debug/IOSDebugKit/Templates/IOSDebugBootstrap.swift"
+test ! -e "$prefix/share/ios-debug/IOSDebugKit/.build"
+test ! -L "$prefix/share/ios-debug/IOSDebugKit/.build"
+test ! -e "$prefix/share/ios-debug/IOSDebugKit/.swiftpm"
+test ! -L "$prefix/share/ios-debug/IOSDebugKit/.swiftpm"
+test "$(cat "$tmp/outside-build/keep.txt")" = build-sentinel
+test "$(cat "$tmp/outside-swiftpm/keep.txt")" = swiftpm-sentinel
 cmp "$tmp/source/skill/SKILL.md" "$codex_home/skills/sx-ios-debug/SKILL.md"
 cmp "$tmp/source/skill/agents/openai.yaml" \
   "$codex_home/skills/sx-ios-debug/agents/openai.yaml"

@@ -50,6 +50,16 @@ remove_stage_file() {
   rm -f -- "$path"
 }
 
+remove_staged_generated_entry() {
+  local path="$1"
+  [[ -n "$path" && "$path" != / ]] || return 0
+  if [[ -L "$path" ]]; then
+    rm -f -- "$path"
+  elif [[ -e "$path" ]]; then
+    rm -rf -- "$path"
+  fi
+}
+
 [[ "$action" = install || "$action" = uninstall ]] || \
   fail "usage: local-install.sh install|uninstall"
 
@@ -143,8 +153,8 @@ trap cleanup EXIT HUP INT TERM
 
 install -m 0755 "$binary_source" "$binary_stage"
 "$ditto_bin" "$package_source" "$package_stage"
-remove_stage_dir "$package_stage/.build"
-remove_stage_dir "$package_stage/.swiftpm"
+remove_staged_generated_entry "$package_stage/.build"
+remove_staged_generated_entry "$package_stage/.swiftpm"
 "$ditto_bin" "$skill_source" "$skill_stage"
 [[ -f "$skill_stage/SKILL.md" && -f "$skill_stage/agents/openai.yaml" ]] || \
   fail "staged skill is incomplete"
