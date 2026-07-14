@@ -1,0 +1,1 @@
+{"info":{"commandType":"devicectl.device.info.lockState","jsonVersion":3,"outcome":"success","version":"518.33"},"result":{"deviceIdentifier":"TEST-COREDEVICE-0001","passcodeRequired":false,"unlockedSinceBoot":true}}
