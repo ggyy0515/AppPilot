@@ -154,6 +154,27 @@ func TestPlanAndInitRejectSymlinkInAncestorAboveProjectRoot(t *testing.T) {
 	require.NoDirExists(t, filepath.Join(outside, "project"))
 }
 
+func TestPlanAndInitAcceptDarwinSystemTmpAlias(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("Darwin exposes /tmp as a root-owned platform alias")
+	}
+	container, err := os.MkdirTemp("/tmp", "ios-debug-scaffold-test-*")
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(container)) })
+
+	root := filepath.Join(container, "project")
+	plan, err := scaffold.Plan(root, fixedLocator{Path: fixtureTemplate(t)})
+	require.NoError(t, err)
+	_, err = scaffold.Apply(plan)
+	require.NoError(t, err)
+	require.FileExists(t, filepath.Join(root, ".ios-debug.toml"))
+
+	localRoot := filepath.Join(container, "local-project")
+	_, err = scaffold.InitLocal(localRoot)
+	require.NoError(t, err)
+	require.FileExists(t, filepath.Join(localRoot, ".ios-debug.toml"))
+}
+
 func TestApplyRejectsAncestorSymlinkIntroducedAfterPlanWithoutWritingOutside(t *testing.T) {
 	container := t.TempDir()
 	root := filepath.Join(container, "project")

@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"syscall"
 
 	"github.com/yangy003/ios-debug-system/cli/internal/contract"
 	"golang.org/x/sys/unix"
@@ -299,9 +300,9 @@ func validateExistingDirectoryAncestors(path string) error {
 	if !filepath.IsAbs(path) {
 		return contract.New(contract.IOFailure, fs.ErrInvalid)
 	}
-	// Darwin exposes its private temporary hierarchy through a root-owned
-	// compatibility link at /var. Treat that immutable platform alias as the
-	// canonical /private/var anchor, while still rejecting every link below it.
+	// Darwin exposes /tmp and /var through root-owned platform aliases. Only
+	// canonicalize aliases whose ownership and exact targets are verified;
+	// every ordinary symlink below those anchors remains forbidden.
 	path = canonicalValidationPath(path)
 	volume := filepath.VolumeName(path)
 	current := volume + string(filepath.Separator)
@@ -554,10 +555,53 @@ func ensureDestinationDirectories(root, destinationDirectory string) ([]createdP
 }
 
 func canonicalValidationPath(path string) string {
-	if runtime.GOOS == "darwin" && (path == "/var" || strings.HasPrefix(path, "/var/")) {
-		return filepath.Join("/private", path)
+	return canonicalValidationPathWith(path, runtime.GOOS, trustedDarwinSystemAlias)
+}
+
+func canonicalValidationPathWith(path, goos string, trusted func(string, string) bool) string {
+	if goos != "darwin" {
+		return path
+	}
+	for _, alias := range []struct {
+		path   string
+		target string
+	}{
+		{path: "/tmp", target: "/private/tmp"},
+		{path: "/var", target: "/private/var"},
+	} {
+		if (path == alias.path || strings.HasPrefix(path, alias.path+string(filepath.Separator))) && trusted(alias.path, alias.target) {
+			return alias.target + strings.TrimPrefix(path, alias.path)
+		}
 	}
 	return path
+}
+
+func trustedDarwinSystemAlias(alias, expectedTarget string) bool {
+	return trustedDarwinSystemAliasWith(alias, expectedTarget, func(path string) (fs.FileMode, uint32, error) {
+		info, err := os.Lstat(path)
+		if err != nil {
+			return 0, 0, err
+		}
+		stat, ok := info.Sys().(*syscall.Stat_t)
+		if !ok {
+			return 0, 0, fs.ErrInvalid
+		}
+		return info.Mode(), stat.Uid, nil
+	}, filepath.EvalSymlinks)
+}
+
+func trustedDarwinSystemAliasWith(
+	alias string,
+	expectedTarget string,
+	metadata func(string) (fs.FileMode, uint32, error),
+	resolve func(string) (string, error),
+) bool {
+	mode, uid, err := metadata(alias)
+	if err != nil || mode&os.ModeSymlink == 0 || uid != 0 {
+		return false
+	}
+	resolved, err := resolve(alias)
+	return err == nil && resolved == expectedTarget
 }
 
 func openDirectoryNoFollow(path string) (*os.File, error) {

@@ -4,11 +4,59 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/yangy003/ios-debug-system/cli/internal/contract"
 )
+
+func TestCanonicalValidationPathOnlyAllowsExactTrustedDarwinAliases(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    string
+		trusted func(string, string) bool
+		want    string
+	}{
+		{name: "trusted tmp", path: "/tmp/project", trusted: func(alias, target string) bool {
+			return alias == "/tmp" && target == "/private/tmp"
+		}, want: "/private/tmp/project"},
+		{name: "trusted var", path: "/var/folders/project", trusted: func(alias, target string) bool {
+			return alias == "/var" && target == "/private/var"
+		}, want: "/private/var/folders/project"},
+		{name: "untrusted replacement", path: "/tmp/project", trusted: func(string, string) bool { return false }, want: "/tmp/project"},
+		{name: "component lookalike", path: "/tmp-evil/project", trusted: func(string, string) bool { return true }, want: "/tmp-evil/project"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require.Equal(t, test.want, canonicalValidationPathWith(test.path, "darwin", test.trusted))
+		})
+	}
+	require.Equal(t, "/tmp/project", canonicalValidationPathWith("/tmp/project", runtime.GOOS+"-not-darwin", func(string, string) bool { return true }))
+}
+
+func TestTrustedDarwinSystemAliasRejectsMaliciousReplacement(t *testing.T) {
+	symlink := func(string) (os.FileMode, uint32, error) { return os.ModeSymlink, 0, nil }
+	resolveExpected := func(string) (string, error) { return "/private/tmp", nil }
+	require.True(t, trustedDarwinSystemAliasWith("/tmp", "/private/tmp", symlink, resolveExpected))
+
+	tests := []struct {
+		name    string
+		stat    func(string) (os.FileMode, uint32, error)
+		resolve func(string) (string, error)
+	}{
+		{name: "non-root owner", stat: func(string) (os.FileMode, uint32, error) { return os.ModeSymlink, 501, nil }, resolve: resolveExpected},
+		{name: "not a symlink", stat: func(string) (os.FileMode, uint32, error) { return os.ModeDir, 0, nil }, resolve: resolveExpected},
+		{name: "wrong target", stat: symlink, resolve: func(string) (string, error) { return "/attacker/tmp", nil }},
+		{name: "stat failure", stat: func(string) (os.FileMode, uint32, error) { return 0, 0, os.ErrNotExist }, resolve: resolveExpected},
+		{name: "resolution failure", stat: symlink, resolve: func(string) (string, error) { return "", os.ErrNotExist }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require.False(t, trustedDarwinSystemAliasWith("/tmp", "/private/tmp", test.stat, test.resolve))
+		})
+	}
+}
 
 type internalFixedLocator struct{ path string }
 
