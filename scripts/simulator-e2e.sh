@@ -133,7 +133,21 @@ if [ "$ready" -ne 1 ]; then
   exit 1
 fi
 run_or_die "validate anonymous health response" "$tmp/health-check.txt" \
-  grep -Eq '"ok":true.*"auth_required":true' "$tmp/probe.json"
+  grep -Eq '"ok":true.*"auth_required":true.*"reachable":true' "$tmp/probe.json"
+run_or_die "read anonymous health contract" "$tmp/anonymous-health.json" \
+  env -u IOS_DEBUG_TOKEN "${cli[@]}" request get /v1/health
+run_or_die "validate minimal anonymous health contract" "$tmp/anonymous-health-check.txt" bash -c '
+  set -euo pipefail
+  file="$1"
+  test "$(plutil -extract data.protocol_version raw -o - "$file")" = 1
+  test "$(plutil -extract data.auth_required raw -o - "$file")" = true
+  test "$(plutil -extract data.reachable raw -o - "$file")" = true
+  if /usr/bin/grep -Eq "\"(service|app_bundle_identifier|app_version)\"" "$file"; then
+    exit 1
+  else
+    test "$?" -eq 1
+  fi
+' _ "$tmp/anonymous-health.json"
 
 run_expect_status 5 "validate protected request without token" "$tmp/missing-token.json" \
   env -u IOS_DEBUG_TOKEN "${cli[@]}" actions list

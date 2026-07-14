@@ -95,8 +95,8 @@ func Plan(into string, locator Locator) (ScaffoldPlan, error) {
 		xcodeSteps: []string{
 			"In Xcode, select File > Add Package Dependencies…",
 			"Click Add Local… and choose " + packagePath + ".",
-			"Add the IOSDebugKit product to the Debug configuration of the app target.",
-			"Add " + filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift") + " to the app target and call IOSDebugBootstrap.start() from Debug startup code.",
+			"Add the IOSDebugKit product only to a dedicated Debug app target; keep every Release or production target free of this package dependency.",
+			"Add " + filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift") + " only to the dedicated Debug app target, call try await IOSDebugBootstrap.start() at Debug startup, and call await IOSDebugBootstrap.stop() later at shutdown.",
 		},
 	}, nil
 }

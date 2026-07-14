@@ -285,13 +285,17 @@ private struct RouteContext: Sendable {
 private enum RouteRegistrar {
     static func register(on router: HTTPRouter, context: RouteContext) async {
         await registerGET(on: router, pattern: "/v1/health") { _, _, requestID in
-            success(.object([
-                "service": .string("ios-debug"),
-                "app_bundle_identifier": .string(Bundle.main.bundleIdentifier ?? ""),
-                "app_version": .string(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""),
+            var data: [String: JSONValue] = [
                 "protocol_version": .number(Double(IOSDebugProtocol.version)),
                 "auth_required": .bool(context.configuration.bearerToken != nil),
-            ]), requestID: requestID)
+                "reachable": .bool(true),
+            ]
+            if context.configuration.bearerToken == nil {
+                data["service"] = .string("ios-debug")
+                data["app_bundle_identifier"] = .string(Bundle.main.bundleIdentifier ?? "")
+                data["app_version"] = .string(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+            }
+            return success(.object(data), requestID: requestID)
         }
 
         await registerGET(on: router, pattern: "/v1/capabilities") { _, _, requestID in

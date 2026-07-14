@@ -306,11 +306,19 @@ private extension JSONValue {
     #expect(health.statusCode == 200)
     #expect(health.headers["Content-Type"] == "application/json; charset=utf-8")
     #expect(keys(try json(health)) == ["ok", "data", "meta"])
-    #expect(keys(try json(health), at: "data") == ["service", "app_bundle_identifier", "app_version", "protocol_version", "auth_required"])
-    #expect(try json(health).value(at: "data.service") == .string("ios-debug"))
+    #expect(keys(try json(health), at: "data") == ["protocol_version", "auth_required", "reachable"])
     #expect(try json(health).value(at: "data.protocol_version") == .number(1))
     #expect(try json(health).value(at: "data.auth_required") == .bool(true))
+    #expect(try json(health).value(at: "data.reachable") == .bool(true))
     try expectJSONMetadata(health)
+
+    let trustedHostHealth = await request(try await makeRuntime(token: nil), .get, "/v1/health", authorize: false)
+    #expect(keys(try json(trustedHostHealth), at: "data") == [
+        "service", "app_bundle_identifier", "app_version", "protocol_version", "auth_required", "reachable",
+    ])
+    #expect(try json(trustedHostHealth).value(at: "data.service") == .string("ios-debug"))
+    #expect(try json(trustedHostHealth).value(at: "data.auth_required") == .bool(false))
+    #expect(try json(trustedHostHealth).value(at: "data.reachable") == .bool(true))
 
     let capabilities = await request(harness, .get, "/v1/capabilities")
     #expect(keys(try json(capabilities), at: "data") == ["protocol_version", "actions", "state", "screenshot", "recording", "limits"])
