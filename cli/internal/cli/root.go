@@ -46,7 +46,13 @@ func NewRoot(deps Dependencies) *cobra.Command {
 	cmd.PersistentFlags().String("transport", "", "device transport: usb or tcp")
 	cmd.PersistentFlags().String("tcp-host", "", "loopback host for the tcp transport")
 	runtime := newRuntime(cmd, deps)
-	cmd.AddCommand(newDevicesCommand(runtime), newAppCommand(runtime), newRequestCommand(runtime))
+	cmd.AddCommand(
+		newDevicesCommand(runtime),
+		newAppCommand(runtime),
+		newRequestCommand(runtime),
+		newActionsCommand(runtime),
+		newStateCommand(runtime),
+	)
 	return cmd
 }
 
