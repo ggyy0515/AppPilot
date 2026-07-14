@@ -1,0 +1,3 @@
+device = "project-udid"
+port = 9777
+output_dir = "project-artifacts"

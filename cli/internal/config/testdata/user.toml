@@ -1,0 +1,3 @@
+device = "user-udid"
+port = 9666
+output_dir = "user-artifacts"
