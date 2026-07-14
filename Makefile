@@ -9,8 +9,11 @@ PREFIX ?= $(HOME)/.local
 CODEX_HOME ?= $(HOME)/.codex
 override BUILD_DIR := $(CURDIR)/build
 IOS_DEBUG_BIN := $(BUILD_DIR)/ios-debug
+DERIVED_DATA ?= $(BUILD_DIR)/DerivedData
+DEMO_PROJECT := Examples/DebugDemo/DebugDemo.xcodeproj
+DEMO_SCHEME := DebugDemo
 
-.PHONY: build-cli scaffold-smoke clean
+.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release clean
 
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
@@ -20,6 +23,21 @@ build-cli:
 
 scaffold-smoke: build-cli
 	@IOS_DEBUG_BIN="$(IOS_DEBUG_BIN)" ./scripts/scaffold-smoke.sh
+
+demo-test:
+	@$(XCODEBUILD) -project "$(DEMO_PROJECT)" -scheme "$(DEMO_SCHEME)" \
+		-destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+		-derivedDataPath "$(DERIVED_DATA)" CODE_SIGNING_ALLOWED=NO test
+
+demo-debug:
+	@$(XCODEBUILD) -project "$(DEMO_PROJECT)" -scheme "$(DEMO_SCHEME)" \
+		-configuration Debug -sdk iphonesimulator \
+		-derivedDataPath "$(DERIVED_DATA)" CODE_SIGNING_ALLOWED=NO build
+
+demo-release:
+	@$(XCODEBUILD) -project "$(DEMO_PROJECT)" -scheme "$(DEMO_SCHEME)" \
+		-configuration Release -sdk iphonesimulator \
+		-derivedDataPath "$(DERIVED_DATA)" CODE_SIGNING_ALLOWED=NO build
 
 clean:
 	@./scripts/clean-build.sh "$(CURDIR)" "$(BUILD_DIR)"
