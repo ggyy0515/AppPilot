@@ -53,6 +53,7 @@ func NewRoot(deps Dependencies) *cobra.Command {
 		newActionsCommand(runtime),
 		newStateCommand(runtime),
 		newScreenshotCommand(runtime),
+		newRecordingCommand(runtime),
 	)
 	return cmd
 }
