@@ -62,11 +62,48 @@ import Testing
     @Test func routerAuthenticationFailuresNeverEchoSecrets() async {
         let router = HTTPRouter(authenticator: .init(token: "configured-secret"))
         await router.register(.get, pattern: "/v1/state") { _, _, _ in .init(statusCode: 200, headers: [:], body: Data()) }
-        for headers in [[:], ["authorization": "Bearer supplied-secret"]] {
+        for (headers, expectedStatus) in [
+            ([String: String](), 401),
+            (["authorization": "Bearer supplied-secret"], 403),
+        ] {
             let response = await router.response(to: request(.get, "/v1/state", headers: headers))
-            #expect(response.statusCode == 401)
+            #expect(response.statusCode == expectedStatus)
             #expect(!response.body.contains(Data("configured-secret".utf8)))
             #expect(!response.body.contains(Data("supplied-secret".utf8)))
+        }
+    }
+
+    @Test func routerMapsMissingAndRejectedBearerTokensToDistinctHTTPStatuses() async {
+        let router = HTTPRouter(authenticator: .init(token: "configured-secret"))
+        await router.register(.get, pattern: "/v1/state") { _, _, _ in
+            .init(statusCode: 200, headers: [:], body: Data())
+        }
+        await router.register(.head, pattern: "/v1/state") { _, _, _ in
+            .init(statusCode: 200, headers: [:], body: Data())
+        }
+
+        for method in [HTTPMethod.get, .head] {
+            let missing = await router.response(to: request(method, "/v1/state"))
+            let rejected = await router.response(to: request(
+                method,
+                "/v1/state",
+                headers: ["authorization": "Bearer supplied-secret"]
+            ))
+            let missingWire = String(decoding: missing.serialized(headOnly: method == .head), as: UTF8.self)
+            let rejectedWire = String(decoding: rejected.serialized(headOnly: method == .head), as: UTF8.self)
+
+            #expect(missing.statusCode == 401)
+            #expect(missing.body.contains(Data(#""code":"auth_required""#.utf8)))
+            #expect(missingWire.hasPrefix("HTTP/1.1 401 Unauthorized\r\n"))
+            #expect(rejected.statusCode == 403)
+            #expect(rejected.body.contains(Data(#""code":"auth_failed""#.utf8)))
+            #expect(rejectedWire.hasPrefix("HTTP/1.1 403 Forbidden\r\n"))
+            for secret in ["configured-secret", "supplied-secret"] {
+                #expect(!missing.body.contains(Data(secret.utf8)))
+                #expect(!rejected.body.contains(Data(secret.utf8)))
+                #expect(!missingWire.contains(secret))
+                #expect(!rejectedWire.contains(secret))
+            }
         }
     }
 

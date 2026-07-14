@@ -44,7 +44,7 @@ public struct HTTPResponse: Sendable, Equatable {
     }
 
     private static let reasons = [
-        200: "OK", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found",
+        200: "OK", 400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found",
         405: "Method Not Allowed", 409: "Conflict", 413: "Content Too Large",
         500: "Internal Server Error", 503: "Service Unavailable", 504: "Gateway Timeout",
     ]
@@ -94,7 +94,8 @@ public actor HTTPRouter {
         let requestID = UUID().uuidString.lowercased()
         let isHealth = request.method == .get && request.path == "/v1/health"
         if let error = authenticator.authorize(request, isHealth: isHealth) {
-            return failure(status: 401, error: error, requestID: requestID)
+            let status = error.code == AppErrorCode.authRequired.rawValue ? 401 : 403
+            return failure(status: status, error: error, requestID: requestID)
         }
 
         let pathComponents = Self.components(of: request.path)

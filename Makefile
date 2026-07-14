@@ -13,7 +13,7 @@ DERIVED_DATA ?= $(BUILD_DIR)/DerivedData
 DEMO_PROJECT := Examples/DebugDemo/DebugDemo.xcodeproj
 DEMO_SCHEME := DebugDemo
 
-.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release clean
+.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e clean
 
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
@@ -38,6 +38,10 @@ demo-release:
 	@$(XCODEBUILD) -project "$(DEMO_PROJECT)" -scheme "$(DEMO_SCHEME)" \
 		-configuration Release -sdk iphonesimulator \
 		-derivedDataPath "$(DERIVED_DATA)" CODE_SIGNING_ALLOWED=NO build
+
+simulator-e2e: build-cli
+	@IOS_DEBUG_BIN="$(IOS_DEBUG_BIN)" DERIVED_DATA="$(BUILD_DIR)/DerivedData-simulator-e2e" \
+		./scripts/simulator-e2e.sh
 
 clean:
 	@./scripts/clean-build.sh "$(CURDIR)" "$(BUILD_DIR)"
