@@ -39,6 +39,15 @@ func TestExecuteTextErrorIsConciseAndRedacted(t *testing.T) {
 	require.NotContains(t, stderr.String(), "70000")
 }
 
+func TestExecuteExplicitJSONFalseUsesTextErrorMode(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := cli.Execute([]string{"--json=false", "devices", "resolve"}, &stdout, &stderr, cli.Dependencies{})
+
+	require.Equal(t, 2, code)
+	require.Empty(t, stdout.String())
+	require.Equal(t, "ios-debug: Configuration is invalid. Fix the named flag, environment variable, or TOML field.\n", stderr.String())
+}
+
 func TestRootDefinesStableShell(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	root := cli.NewRoot(cli.Dependencies{Version: "1.2.3", Stdout: &stdout, Stderr: &stderr})

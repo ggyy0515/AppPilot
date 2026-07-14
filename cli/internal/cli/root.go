@@ -2,19 +2,31 @@ package cli
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/yangy003/ios-debug-system/cli/internal/config"
 	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ios-debug-system/cli/internal/transport"
 )
 
 type Dependencies struct {
-	Version string
-	Stdout  io.Writer
-	Stderr  io.Writer
+	Version    string
+	Stdout     io.Writer
+	Stderr     io.Writer
+	LoadConfig func(context.Context, config.LoadOptions) (config.Config, error)
+	Devices    DeviceDiscoverer
+	NewUSB     func() transport.DeviceTransport
+	NewTCP     func(string) (transport.DeviceTransport, error)
+	Now        func() time.Time
+	WorkingDir string
+	UserHome   string
 }
 
 func NewRoot(deps Dependencies) *cobra.Command {
@@ -33,6 +45,8 @@ func NewRoot(deps Dependencies) *cobra.Command {
 	cmd.PersistentFlags().String("output-dir", "", "default artifact directory")
 	cmd.PersistentFlags().String("transport", "", "device transport: usb or tcp")
 	cmd.PersistentFlags().String("tcp-host", "", "loopback host for the tcp transport")
+	runtime := newRuntime(cmd, deps)
+	cmd.AddCommand(newDevicesCommand(runtime), newAppCommand(runtime), newRequestCommand(runtime))
 	return cmd
 }
 
@@ -65,7 +79,7 @@ func Execute(args []string, stdout, stderr io.Writer, deps Dependencies) int {
 		return 0
 	}
 
-	stable := contract.New(contract.ConfigInvalid, err)
+	stable := stableCommandError(err)
 	if isPortError(err) {
 		stable = contract.NewWithHint(contract.ConfigInvalid, err, "Use a port from 1 through 65535.")
 	}
@@ -75,6 +89,14 @@ func Execute(args []string, stdout, stderr io.Writer, deps Dependencies) int {
 		_, _ = fmt.Fprintf(stderr, "ios-debug: %s %s\n", stable.Message, stable.Hint)
 	}
 	return contract.ExitCode(stable)
+}
+
+func stableCommandError(err error) *contract.Error {
+	var stable *contract.Error
+	if errors.As(err, &stable) {
+		return stable
+	}
+	return contract.New(contract.ConfigInvalid, err)
 }
 
 func emitJSONSuccess(emitter *contract.Emitter, data any) int {
@@ -114,10 +136,19 @@ func isPortError(err error) bool {
 }
 
 func hasJSONFlag(args []string) bool {
+	enabled := false
 	for _, arg := range args {
-		if arg == "--json" || strings.HasPrefix(arg, "--json=") {
-			return true
+		if arg == "--json" {
+			enabled = true
+			continue
+		}
+		if strings.HasPrefix(arg, "--json=") {
+			value, err := strconv.ParseBool(strings.TrimPrefix(arg, "--json="))
+			if err != nil {
+				return true
+			}
+			enabled = value
 		}
 	}
-	return false
+	return enabled
 }
