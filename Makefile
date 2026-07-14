@@ -14,7 +14,7 @@ DEMO_PROJECT := Examples/DebugDemo/DebugDemo.xcodeproj
 DEMO_SCHEME := DebugDemo
 DEMO_RELEASE_SCHEME := DebugDemo-Release
 
-.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan clean
+.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test clean
 
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
@@ -47,6 +47,13 @@ simulator-e2e: build-cli
 release-scan: build-cli
 	@IOS_DEBUG_BIN="$(IOS_DEBUG_BIN)" DERIVED_DATA="$(BUILD_DIR)/DerivedData-release-scan" \
 		./scripts/release-scan.sh
+
+device-smoke: build-cli
+	@IOS_DEBUG_BIN="$(IOS_DEBUG_BIN)" DERIVED_DATA="$(BUILD_DIR)/DerivedData-device-smoke" \
+		./scripts/device-smoke.sh
+
+device-smoke-test:
+	@./scripts/tests/device-smoke-test.sh
 
 clean:
 	@./scripts/clean-build.sh "$(CURDIR)" "$(BUILD_DIR)"
