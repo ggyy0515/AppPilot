@@ -41,6 +41,25 @@ private actor RuntimeEventLog {
     func append(_ event: String) { events.append(event) }
 }
 
+private actor RuntimeGate {
+    private var isOpen = false
+    private var continuations: [CheckedContinuation<Void, Never>] = []
+    private(set) var entryCount = 0
+
+    func wait() async {
+        entryCount += 1
+        guard !isOpen else { return }
+        await withCheckedContinuation { continuations.append($0) }
+    }
+
+    func release() {
+        isOpen = true
+        let pending = continuations
+        continuations.removeAll()
+        pending.forEach { $0.resume() }
+    }
+}
+
 @MainActor
 private final class RuntimeScreenshotFake {
     var result: Result<CapturedScreenshot, Error>
@@ -66,8 +85,12 @@ private actor RuntimeRecordingFake {
     var availableCount = 0
     var statusCount = 0
     let eventLog: RuntimeEventLog?
+    let cleanupGate: RuntimeGate?
 
-    init(eventLog: RuntimeEventLog? = nil) { self.eventLog = eventLog }
+    init(eventLog: RuntimeEventLog? = nil, cleanupGate: RuntimeGate? = nil) {
+        self.eventLog = eventLog
+        self.cleanupGate = cleanupGate
+    }
 
     func source() -> IOSDebugRuntime.RecordingSource {
         .init(
@@ -89,7 +112,7 @@ private actor RuntimeRecordingFake {
                 if let error = await self.deleteError { try error.raise() }
                 await self.didDelete(id: id)
             },
-            cleanup: { await self.didCleanup() }
+            cleanup: { await self.performCleanup() }
         )
     }
 
@@ -105,6 +128,10 @@ private actor RuntimeRecordingFake {
     }
     private func didDelete(id: String) { deleteIDs.append(id) }
     private func didCleanup() async { cleanupCount += 1; await eventLog?.append("recording.cleanup") }
+    private func performCleanup() async {
+        await cleanupGate?.wait()
+        await didCleanup()
+    }
     private func readAvailability() -> Bool { availableCount += 1; return available }
     private func readStatus() -> RecordingStatus { statusCount += 1; return current }
 
@@ -118,22 +145,39 @@ private actor RuntimeRecordingFake {
 }
 
 private actor RuntimeServerFake {
+    var isRunning = false
+    var startAttemptCount = 0
     var startCount = 0
     var stopCount = 0
     var startError: ProtocolError?
     let eventLog: RuntimeEventLog?
-    init(eventLog: RuntimeEventLog? = nil) { self.eventLog = eventLog }
+    let startGate: RuntimeGate?
+    let stopGate: RuntimeGate?
+    init(eventLog: RuntimeEventLog? = nil, startGate: RuntimeGate? = nil, stopGate: RuntimeGate? = nil) {
+        self.eventLog = eventLog
+        self.startGate = startGate
+        self.stopGate = stopGate
+    }
     func source() -> IOSDebugRuntime.ServerSource {
         .init(
-            start: {
-                if let error = await self.startError { throw error }
-                await self.didStart()
-            },
-            stop: { await self.didStop() }
+            start: { try await self.performStart() },
+            stop: { await self.performStop() }
         )
     }
-    private func didStart() async { startCount += 1; await eventLog?.append("server.start") }
-    private func didStop() async { stopCount += 1; await eventLog?.append("server.stop") }
+    private func performStart() async throws {
+        startAttemptCount += 1
+        await startGate?.wait()
+        if let startError { throw startError }
+        startCount += 1
+        isRunning = true
+        await eventLog?.append("server.start")
+    }
+    private func performStop() async {
+        await stopGate?.wait()
+        stopCount += 1
+        isRunning = false
+        await eventLog?.append("server.stop")
+    }
 }
 
 private struct RuntimeHarness {
@@ -151,7 +195,10 @@ private func makeRuntime(
     token: String? = "secret",
     maximumRequestBodyBytes: Int = IOSDebugProtocol.maximumRequestBodyBytes,
     maximumPNGBytes: Int = IOSDebugProtocol.maximumPNGBytes,
-    maximumMP4Bytes: Int = IOSDebugProtocol.maximumMP4Bytes
+    maximumMP4Bytes: Int = IOSDebugProtocol.maximumMP4Bytes,
+    cleanupGate: RuntimeGate? = nil,
+    serverStartGate: RuntimeGate? = nil,
+    serverStopGate: RuntimeGate? = nil
 ) async throws -> RuntimeHarness {
     let eventLog = RuntimeEventLog()
     let state = RuntimeStateProvider()
@@ -160,9 +207,9 @@ private func makeRuntime(
     _ = try actions.register(identifier: "header.settings", role: .navigation, description: "Open settings") {
         activationCount.increment()
     }
-    let recording = RuntimeRecordingFake(eventLog: eventLog)
+    let recording = RuntimeRecordingFake(eventLog: eventLog, cleanupGate: cleanupGate)
     let recordingSource = await recording.source()
-    let server = RuntimeServerFake(eventLog: eventLog)
+    let server = RuntimeServerFake(eventLog: eventLog, startGate: serverStartGate, stopGate: serverStopGate)
     let serverSource = await server.source()
     let png = Data([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     let screenshot = CapturedScreenshot(
@@ -228,6 +275,10 @@ private func expectJSONMetadata(_ response: HTTPResponse) throws {
     #expect(response.headers["X-IOS-Debug-Protocol-Version"] == "1")
     #expect(response.headers["X-IOS-Debug-Request-ID"] == requestID)
     #expect(response.headers["Content-Length"] == String(response.body.count))
+}
+
+private func waitForEntry(into gate: RuntimeGate) async {
+    while await gate.entryCount == 0 { await Task.yield() }
 }
 
 private extension JSONValue {
@@ -598,6 +649,98 @@ private extension JSONValue {
     try await retry.runtime.start()
     #expect(await retry.server.startCount == 1)
     #expect(await retry.server.stopCount == 1)
+}
+
+@Test @MainActor func concurrentStartsShareStartupWhileCleanupIsSuspended() async throws {
+    let gate = RuntimeGate()
+    let harness = try await makeRuntime(cleanupGate: gate)
+
+    let first = Task { @MainActor in try await harness.runtime.start() }
+    await waitForEntry(into: gate)
+    let second = Task { @MainActor in try await harness.runtime.start() }
+    await Task.yield()
+    await gate.release()
+
+    try await first.value
+    try await second.value
+    #expect(await harness.recording.cleanupCount == 1)
+    #expect(await harness.server.startAttemptCount == 1)
+    #expect(await harness.server.startCount == 1)
+    await harness.runtime.stop()
+}
+
+@Test @MainActor func stopDuringCleanupWaitsForStartupAndLeavesServerStopped() async throws {
+    let gate = RuntimeGate()
+    let harness = try await makeRuntime(cleanupGate: gate)
+
+    let starting = Task { @MainActor in try await harness.runtime.start() }
+    await waitForEntry(into: gate)
+    let stopping = Task { @MainActor in await harness.runtime.stop() }
+    await Task.yield()
+    await gate.release()
+
+    try await starting.value
+    await stopping.value
+    #expect(await harness.server.startCount == 1)
+    #expect(await harness.server.stopCount == 1)
+    #expect(await harness.server.isRunning == false)
+}
+
+@Test @MainActor func stopDuringServerStartWaitsForListenerAndLeavesItStopped() async throws {
+    let gate = RuntimeGate()
+    let harness = try await makeRuntime(serverStartGate: gate)
+
+    let starting = Task { @MainActor in try await harness.runtime.start() }
+    await waitForEntry(into: gate)
+    let stopping = Task { @MainActor in await harness.runtime.stop() }
+    await Task.yield()
+    await gate.release()
+
+    try await starting.value
+    await stopping.value
+    #expect(await harness.server.startCount == 1)
+    #expect(await harness.server.stopCount == 1)
+    #expect(await harness.server.isRunning == false)
+}
+
+@Test @MainActor func lateStartupFailureDuringStopRollsBackOnceAndCanRetry() async throws {
+    let gate = RuntimeGate()
+    let harness = try await makeRuntime(serverStartGate: gate)
+
+    let starting = Task { @MainActor in try await harness.runtime.start() }
+    await waitForEntry(into: gate)
+    await harness.server.setStartError(.init(code: "server_start_failed", message: "Failed", hint: "Retry"))
+    let stopping = Task { @MainActor in await harness.runtime.stop() }
+    await Task.yield()
+    await gate.release()
+
+    await #expect(throws: ProtocolError.self) { try await starting.value }
+    await stopping.value
+    #expect(await harness.server.stopCount == 1)
+    #expect(await harness.server.isRunning == false)
+
+    await harness.server.setStartError(nil)
+    try await harness.runtime.start()
+    #expect(await harness.server.startCount == 1)
+    #expect(await harness.server.isRunning == true)
+    await harness.runtime.stop()
+}
+
+@Test @MainActor func concurrentStopsShareShutdownWhileServerStopIsSuspended() async throws {
+    let gate = RuntimeGate()
+    let harness = try await makeRuntime(serverStopGate: gate)
+    try await harness.runtime.start()
+
+    let first = Task { @MainActor in await harness.runtime.stop() }
+    await waitForEntry(into: gate)
+    let second = Task { @MainActor in await harness.runtime.stop() }
+    await Task.yield()
+    await gate.release()
+
+    await first.value
+    await second.value
+    #expect(await harness.server.stopCount == 1)
+    #expect(await harness.server.isRunning == false)
 }
 
 @Test @MainActor func stopFinalizesAnActiveRecordingOnce() async throws {

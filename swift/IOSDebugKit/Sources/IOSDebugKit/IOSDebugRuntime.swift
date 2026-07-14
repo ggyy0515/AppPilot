@@ -78,6 +78,13 @@ import UIKit
         )
     }
 
+    private enum Lifecycle {
+        case stopped
+        case starting(UInt64, Task<ServerSource, Error>)
+        case running(UInt64, ServerSource)
+        case stopping(UInt64, Task<Void, Never>)
+    }
+
     public let actions: DebugActionRegistry
 
     private let configuration: Configuration
@@ -87,8 +94,8 @@ import UIKit
     private let recording: RecordingSource
     private let serverFactory: @MainActor @Sendable (UInt16, HTTPRouter) throws -> ServerSource
     private let routeRegistration: Task<Void, Never>
-    private var server: ServerSource?
-    private var isStarted = false
+    private var lifecycle = Lifecycle.stopped
+    private var nextLifecycleGeneration: UInt64 = 0
 
     public convenience init(
         configuration: Configuration,
@@ -162,31 +169,97 @@ import UIKit
     }
 
     public func start() async throws {
-        if isStarted { return }
-        await routeRegistration.value
-        do {
-            try await recording.cleanup()
-            let server = try serverFactory(configuration.port, router)
-            self.server = server
-            try await server.start()
-            isStarted = true
-        } catch {
-            if let server { await server.stop() }
-            server = nil
-            isStarted = false
-            throw error
+        while true {
+            switch lifecycle {
+            case .stopped:
+                nextLifecycleGeneration &+= 1
+                let generation = nextLifecycleGeneration
+                let task = makeStartTask()
+                lifecycle = .starting(generation, task)
+                try await finishStart(generation: generation, task: task)
+                return
+            case let .starting(generation, task):
+                try await finishStart(generation: generation, task: task)
+                return
+            case .running:
+                return
+            case let .stopping(generation, task):
+                await task.value
+                finishStop(generation: generation)
+            }
         }
     }
 
     public func stop() async {
-        guard let server else { return }
+        switch lifecycle {
+        case .stopped:
+            return
+        case let .starting(generation, startTask):
+            let task = Task { @MainActor [recording] in
+                do {
+                    let server = try await startTask.value
+                    await Self.shutDown(server: server, recording: recording)
+                } catch {
+                    // Startup owns rollback when it fails.
+                }
+            }
+            lifecycle = .stopping(generation, task)
+            await task.value
+            finishStop(generation: generation)
+        case let .running(generation, server):
+            let task = Task { @MainActor [recording] in
+                await Self.shutDown(server: server, recording: recording)
+            }
+            lifecycle = .stopping(generation, task)
+            await task.value
+            finishStop(generation: generation)
+        case let .stopping(generation, task):
+            await task.value
+            finishStop(generation: generation)
+        }
+    }
+
+    private func makeStartTask() -> Task<ServerSource, Error> {
+        Task { @MainActor [configuration, recording, routeRegistration, router, serverFactory] in
+            await routeRegistration.value
+            try await recording.cleanup()
+            let server = try serverFactory(configuration.port, router)
+            do {
+                try await server.start()
+                return server
+            } catch {
+                await server.stop()
+                throw error
+            }
+        }
+    }
+
+    private func finishStart(generation: UInt64, task: Task<ServerSource, Error>) async throws {
+        do {
+            let server = try await task.value
+            if case let .starting(currentGeneration, _) = lifecycle, currentGeneration == generation {
+                lifecycle = .running(generation, server)
+            }
+        } catch {
+            if case let .starting(currentGeneration, _) = lifecycle, currentGeneration == generation {
+                lifecycle = .stopped
+            }
+            throw error
+        }
+    }
+
+    private func finishStop(generation: UInt64) {
+        if case let .stopping(currentGeneration, _) = lifecycle, currentGeneration == generation {
+            lifecycle = .stopped
+        }
+    }
+
+    private static func shutDown(server: ServerSource, recording: RecordingSource) async {
         await server.stop()
         let status = await recording.status()
         if status.phase == .recording {
             _ = try? await recording.stop()
         }
-        self.server = nil
-        isStarted = false
     }
 
     func waitForRouteRegistrationForTesting() async {
