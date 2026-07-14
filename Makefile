@@ -14,7 +14,7 @@ DEMO_PROJECT := Examples/DebugDemo/DebugDemo.xcodeproj
 DEMO_SCHEME := DebugDemo
 DEMO_RELEASE_SCHEME := DebugDemo-Release
 
-.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test clean
+.PHONY: build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test clean
 
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
@@ -54,6 +54,12 @@ device-smoke: build-cli
 
 device-smoke-test:
 	@./scripts/tests/device-smoke-test.sh
+
+validate-skill:
+	@./scripts/validate-skill.sh
+
+validate-skill-test:
+	@./scripts/tests/validate-skill-test.sh
 
 clean:
 	@./scripts/clean-build.sh "$(CURDIR)" "$(BUILD_DIR)"
