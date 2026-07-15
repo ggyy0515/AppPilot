@@ -24,6 +24,7 @@ type scriptedDeviceTransport struct {
 	mu       sync.Mutex
 	dials    int
 	request  string
+	host     string
 }
 
 func (s *scriptedDeviceTransport) Name() string { return "scripted" }
@@ -59,6 +60,7 @@ func (s *scriptedDeviceTransport) Dial(context.Context, string, uint16) (net.Con
 		raw.Write(body)
 		s.mu.Lock()
 		s.request = raw.String()
+		s.host = request.Host
 		s.mu.Unlock()
 		_, _ = io.WriteString(server, s.response)
 	}()
@@ -75,6 +77,12 @@ func (s *scriptedDeviceTransport) Request() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.request
+}
+
+func (s *scriptedDeviceTransport) Host() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.host
 }
 
 func jsonHTTP(status string, body string, extraHeaders ...string) string {
@@ -104,6 +112,15 @@ func TestDoJSONUsesOneConnectionAndValidatesVersion(t *testing.T) {
 	require.Contains(t, tr.Request(), "Connection: close\r\n")
 	require.Contains(t, tr.Request(), "Accept: application/json\r\n")
 	require.Equal(t, 1, tr.DialCount())
+}
+
+func TestDoJSONUsesAppPilotVirtualHost(t *testing.T) {
+	tr := &scriptedDeviceTransport{t: t, response: jsonHTTP("200 OK", successEnvelope(`{}`))}
+
+	_, err := NewClient(tr, Target{Port: 9876}, "").DoJSON(context.Background(), http.MethodGet, "/v1/health", nil, 1024, nil)
+
+	require.NoError(t, err)
+	require.Equal(t, "ap-ios-debug.local", tr.Host())
 }
 
 func TestDoJSONEncodesInputBeforeDialAndLimitsRequestSize(t *testing.T) {
