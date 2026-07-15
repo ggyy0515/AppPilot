@@ -39,7 +39,15 @@ if "$checker" --scan-only "$wire_header" >/dev/null 2>&1; then
   echo 'FAIL: wire-protocol exception accepted a non-header legacy name' >&2
   exit 1
 fi
-uppercase_non_headers=('X-IOS-Debug' 'X-IOS-Debug-' 'X-IOS-Debugger' 'IOS-Debug')
+uppercase_non_headers=(
+  'X-IOS-Debug'
+  'X-IOS-Debug-'
+  'X-IOS-Debugger'
+  'IOS-Debug'
+  'X-Ios-Debug-Protocol-Version'
+  'x-IOS-Debug-Protocol-Version'
+  'AP-IOS-Debug'
+)
 for value in "${uppercase_non_headers[@]}"; do
   printf '%s\n' "$value" >"$wire_header"
   uppercase_status=0

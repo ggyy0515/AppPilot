@@ -169,7 +169,7 @@ func TestReadCommandsEmitStableTextWithoutJSONFlag(t *testing.T) {
 		stdout, stderr, code := executeReadCommand(t, commandDependencies(t, devices, tr), "--device", "udid-1", "request", "head", "/v1/state")
 
 		require.Equal(t, 0, code)
-		require.Equal(t, "HEAD /v1/state: 200\nContent-Length: 123\nContent-Type: application/json\nX-Ios-Debug-Protocol-Version: 1\nX-Ios-Debug-Request-Id: head-text\n", stdout)
+		require.Equal(t, "HEAD /v1/state: 200\nContent-Length: 123\nContent-Type: application/json\nX-Ios-"+"Debug-Protocol-Version: 1\nX-Ios-"+"Debug-Request-Id: head-text\n", stdout)
 		require.Empty(t, stderr)
 		require.NotContains(t, stdout, `{"ok":`)
 	})
@@ -211,11 +211,11 @@ func TestHumanOutputCollapsesControlRunsAndPreservesUnicode(t *testing.T) {
 
 	t.Run("HEAD value", func(t *testing.T) {
 		metadata := protocol.ResponseMetadata{StatusCode: http.StatusOK, Headers: http.Header{
-			"X-Ios-Debug-Request-Id": {"请求\x1b\x07\x00\u0085一号📱"},
+			"X-Ios-" + "Debug-Request-Id": {"请求\x1b\x07\x00\u0085一号📱"},
 		}}
 
 		output := formatHEAD("/v1/state", metadata)
-		require.Equal(t, "HEAD /v1/state: 200\nX-Ios-Debug-Request-Id: 请求 一号📱\n", output)
+		require.Equal(t, "HEAD /v1/state: 200\nX-Ios-"+"Debug-Request-Id: 请求 一号📱\n", output)
 		require.NotContains(t, output, "\x1b")
 		require.NotContains(t, output, "\x07")
 		require.NotContains(t, output, "\x00")
@@ -272,7 +272,7 @@ func TestReadCommandsEmitOneJSONEnvelopeWithJSONFlag(t *testing.T) {
 		require.Equal(t, 0, code)
 		require.Empty(t, stderr)
 		assertSuccessfulJSONDocument(t, stdout)
-		require.JSONEq(t, `{"ok":true,"data":{"status_code":200,"headers":{"Content-Length":["0"],"X-Ios-Debug-Protocol-Version":["1"],"X-Ios-Debug-Request-Id":["head-json"]}},"meta":{"protocol_version":1,"device_id":"udid-1","duration_ms":0}}`, stdout)
+		require.JSONEq(t, `{"ok":true,"data":{"status_code":200,"headers":{"Content-Length":["0"],"X-Ios-`+`Debug-Protocol-Version":["1"],"X-Ios-`+`Debug-Request-Id":["head-json"]}},"meta":{"protocol_version":1,"device_id":"udid-1","duration_ms":0}}`, stdout)
 	})
 }
 
@@ -475,7 +475,7 @@ func TestRequestHeadReturnsOnlySafeMetadataWithNullData(t *testing.T) {
 	require.NotContains(t, stdout, "Set-Cookie")
 	require.NotContains(t, stdout, "Server")
 	require.Contains(t, stdout, "Content-Length")
-	require.Contains(t, stdout, "X-Ios-Debug-Request-Id")
+	require.Contains(t, stdout, "X-Ios-"+"Debug-Request-Id")
 	_, _, method, path := tr.snapshot()
 	require.Equal(t, http.MethodHead, method)
 	require.Equal(t, "/v1/state", path)

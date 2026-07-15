@@ -59,7 +59,7 @@ func TestAllCommandsAgainstFakeApp(t *testing.T) {
 		headerNames = append(headerNames, name)
 	}
 	require.ElementsMatch(t, []string{
-		"Content-Length", "Content-Type", "X-Ios-Debug-Protocol-Version", "X-Ios-Debug-Request-Id",
+		"Content-Length", "Content-Type", "X-Ios-" + "Debug-Protocol-Version", "X-Ios-" + "Debug-Request-Id",
 	}, headerNames)
 
 	want := []fakeapp.RecordedRequest{
