@@ -79,6 +79,33 @@ test "$(cat "$prefix/bin/ap-ios-debug")" = old-binary
 test "$(cat "$prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
 test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
 
+printf 'legacy-bin\n' >"$prefix/bin/ios-debug"
+mkdir -p "$prefix/share/ios-debug/IOSDebugKit" "$codex_home/skills/sx-ios-debug"
+printf 'legacy-package\n' >"$prefix/share/ios-debug/IOSDebugKit/version"
+printf 'legacy-skill\n' >"$codex_home/skills/sx-ios-debug/version"
+export AP_IOS_DEBUG_TEST_FAIL_AFTER_BACKUP=1
+if run_installer "$prefix" "$codex_home"; then
+  echo 'FAIL: injected post-backup failure was accepted' >&2
+  exit 1
+fi
+unset AP_IOS_DEBUG_TEST_FAIL_AFTER_BACKUP
+test "$(cat "$prefix/bin/ap-ios-debug")" = old-binary
+test "$(cat "$prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
+test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
+test "$(cat "$prefix/bin/ios-debug")" = legacy-bin
+test "$(cat "$prefix/share/ios-debug/IOSDebugKit/version")" = legacy-package
+test "$(cat "$codex_home/skills/sx-ios-debug/version")" = legacy-skill
+
+printf 'legacy-bin-sibling\n' >"$prefix/bin/ios-debug-helper"
+printf 'legacy-share-sibling\n' >"$prefix/share/ios-debug/unrelated"
+printf 'legacy-skill-sibling\n' >"$codex_home/skills/sx-ios-debug-notes"
+project="$tmp/Project"
+mkdir -p "$project/.ios-debug/artifacts" "$project/.ap-ios-debug/artifacts"
+printf 'legacy-user-data\n' >"$project/.ios-debug.toml"
+printf 'legacy-artifact\n' >"$project/.ios-debug/artifacts/keep.txt"
+printf 'user-data\n' >"$project/.ap-ios-debug.toml"
+printf 'artifact\n' >"$project/.ap-ios-debug/artifacts/keep.txt"
+
 run_installer "$prefix" "$codex_home"
 cmp "$tmp/source/ap-ios-debug" "$prefix/bin/ap-ios-debug"
 cmp "$tmp/source/package/Templates/APIOSDebugBootstrap.swift" \
@@ -92,14 +119,18 @@ test "$(cat "$tmp/outside-swiftpm/keep.txt")" = swiftpm-sentinel
 cmp "$tmp/source/skill/SKILL.md" "$codex_home/skills/ap-ios-debug-skill/SKILL.md"
 cmp "$tmp/source/skill/agents/openai.yaml" \
   "$codex_home/skills/ap-ios-debug-skill/agents/openai.yaml"
+test ! -e "$prefix/bin/ios-debug"
+test ! -e "$prefix/share/ios-debug/IOSDebugKit"
+test ! -e "$codex_home/skills/sx-ios-debug"
+test -f "$prefix/bin/ios-debug-helper"
+test -f "$prefix/share/ios-debug/unrelated"
+test -f "$codex_home/skills/sx-ios-debug-notes"
+test -f "$project/.ios-debug.toml"
+test -f "$project/.ios-debug/artifacts/keep.txt"
 
 printf 'unrelated-bin\n' >"$prefix/bin/unrelated"
 printf 'unrelated-share\n' >"$prefix/share/unrelated"
 printf 'unrelated-skill\n' >"$codex_home/skills/unrelated"
-project="$tmp/Project"
-mkdir -p "$project/.ap-ios-debug/artifacts"
-printf 'user-data\n' >"$project/.ap-ios-debug.toml"
-printf 'artifact\n' >"$project/.ap-ios-debug/artifacts/keep.txt"
 run_installer "$prefix" "$codex_home" "$tmp/source/skill" uninstall
 test ! -e "$prefix/bin/ap-ios-debug"
 test ! -e "$prefix/share/ap-ios-debug/ap-ios-debug-kit"
@@ -107,6 +138,11 @@ test ! -e "$codex_home/skills/ap-ios-debug-skill"
 test -f "$prefix/bin/unrelated"
 test -f "$prefix/share/unrelated"
 test -f "$codex_home/skills/unrelated"
+test -f "$prefix/bin/ios-debug-helper"
+test -f "$prefix/share/ios-debug/unrelated"
+test -f "$codex_home/skills/sx-ios-debug-notes"
+test -f "$project/.ios-debug.toml"
+test -f "$project/.ios-debug/artifacts/keep.txt"
 test -f "$project/.ap-ios-debug.toml"
 test -f "$project/.ap-ios-debug/artifacts/keep.txt"
 

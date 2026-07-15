@@ -10,11 +10,19 @@ cd /tmp
 
 export PATH="$prefix/bin:$PATH"
 test "$(command -v ap-ios-debug)" = "$prefix/bin/ap-ios-debug"
+! command -v ios-debug >/dev/null 2>&1
 ap-ios-debug --help >"$tmp/help.txt"
 grep -q '^  ap-ios-debug \[command\]$' "$tmp/help.txt"
+test -f "$codex_home/skills/ap-ios-debug-skill/agents/openai.yaml"
+test -f "$prefix/share/ap-ios-debug/ap-ios-debug-kit/Package.swift"
+test ! -e "$prefix/share/ap-ios-debug/ap-ios-debug-kit/.build"
+test ! -e "$prefix/share/ap-ios-debug/ap-ios-debug-kit/.swiftpm"
 doctor_status=0
 ap-ios-debug --json doctor >"$tmp/doctor.json" || doctor_status=$?
-[[ "$doctor_status" -ge 0 && "$doctor_status" -le 6 && "$doctor_status" -ne 1 ]]
+case "$doctor_status" in
+  0|2|3|4|5|6) ;;
+  *) exit 1 ;;
+esac
 /usr/bin/ruby -rjson -e '
   document = JSON.parse(File.read(ARGV.fetch(0)))
   abort "doctor envelope is not successful" unless document["ok"] == true

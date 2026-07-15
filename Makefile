@@ -105,14 +105,25 @@ install-smoke-isolated: local-install-safety-test
 	gomodcache="$$(go env GOMODCACHE)"; \
 	gocache="$$(go env GOCACHE)"; \
 	mkdir -p "$$tmp/home/.local/bin" "$$tmp/home/.local/share" \
-		"$$tmp/home/.codex/skills" "$$tmp/Project/.ap-ios-debug/artifacts"; \
+		"$$tmp/home/.local/share/ios-debug/IOSDebugKit" \
+		"$$tmp/home/.codex/skills/sx-ios-debug" \
+		"$$tmp/Project/.ios-debug/artifacts" "$$tmp/Project/.ap-ios-debug/artifacts"; \
+	printf '#!/bin/sh\nexit 0\n' >"$$tmp/home/.local/bin/ios-debug"; \
+	chmod 0755 "$$tmp/home/.local/bin/ios-debug"; \
+	printf 'legacy-package\n' >"$$tmp/home/.local/share/ios-debug/IOSDebugKit/version"; \
+	printf 'legacy-skill\n' >"$$tmp/home/.codex/skills/sx-ios-debug/version"; \
 	printf 'unrelated-bin\n' >"$$tmp/home/.local/bin/unrelated"; \
 	printf 'unrelated-share\n' >"$$tmp/home/.local/share/unrelated"; \
 	printf 'unrelated-skill\n' >"$$tmp/home/.codex/skills/unrelated"; \
+	printf 'legacy-user-data\n' >"$$tmp/Project/.ios-debug.toml"; \
+	printf 'legacy-artifact\n' >"$$tmp/Project/.ios-debug/artifacts/keep.txt"; \
 	printf 'user-data\n' >"$$tmp/Project/.ap-ios-debug.toml"; \
 	printf 'artifact\n' >"$$tmp/Project/.ap-ios-debug/artifacts/keep.txt"; \
 	HOME="$$tmp/home" GOMODCACHE="$$gomodcache" GOCACHE="$$gocache" $(MAKE) install-local \
 		PREFIX="$$tmp/home/.local" CODEX_HOME="$$tmp/home/.codex"; \
+	test ! -e "$$tmp/home/.local/bin/ios-debug"; \
+	test ! -e "$$tmp/home/.local/share/ios-debug/IOSDebugKit"; \
+	test ! -e "$$tmp/home/.codex/skills/sx-ios-debug"; \
 	HOME="$$tmp/home" GOMODCACHE="$$gomodcache" GOCACHE="$$gocache" $(MAKE) uninstall-local \
 		PREFIX="$$tmp/home/.local" CODEX_HOME="$$tmp/home/.codex"; \
 	test ! -e "$$tmp/home/.local/bin/ap-ios-debug"; \
@@ -121,6 +132,8 @@ install-smoke-isolated: local-install-safety-test
 	test -f "$$tmp/home/.local/bin/unrelated"; \
 	test -f "$$tmp/home/.local/share/unrelated"; \
 	test -f "$$tmp/home/.codex/skills/unrelated"; \
+	test -f "$$tmp/Project/.ios-debug.toml"; \
+	test -f "$$tmp/Project/.ios-debug/artifacts/keep.txt"; \
 	test -f "$$tmp/Project/.ap-ios-debug.toml"; \
 	test -f "$$tmp/Project/.ap-ios-debug/artifacts/keep.txt"; \
 	echo "PASS: install-uninstall-isolated"
