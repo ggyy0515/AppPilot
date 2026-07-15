@@ -24,6 +24,13 @@ run_expect_failure() {
 SKILL_PATH="$source_skill" "$validator" >/dev/null
 SKILL_PATH="$source_skill/SKILL.md" "$validator" >/dev/null
 
+grep -Fxq 'name: ap-ios-debug-skill' "$source_skill/SKILL.md"
+grep -Fxq '# AppPilot — ap-ios-debug-skill' "$source_skill/SKILL.md"
+grep -Fq 'command -v ap-ios-debug' "$source_skill/SKILL.md"
+grep -Fq 'ap-ios-debug --json doctor' "$source_skill/SKILL.md"
+grep -Fq '.ap-ios-debug/artifacts' "$source_skill/SKILL.md"
+grep -Fq 'APIOSDebugKit' "$source_skill/SKILL.md"
+grep -Fq 'APIOSDebugBootstrap' "$source_skill/SKILL.md"
 grep -Fq 'Destructive actions are intentionally not activated by this block.' \
   "$source_skill/SKILL.md"
 grep -Fq 'if [[ "$ROLE" == "destructive" ]]; then' "$source_skill/SKILL.md"

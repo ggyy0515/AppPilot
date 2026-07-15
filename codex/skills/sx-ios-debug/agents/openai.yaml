@@ -1,4 +1,0 @@
-interface:
-  display_name: "sx iOS Debug"
-  short_description: "Operate opted-in iOS Debug builds safely"
-  default_prompt: "Use $sx-ios-debug to inspect and operate an opted-in iOS Debug build."

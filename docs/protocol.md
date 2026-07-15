@@ -1,4 +1,4 @@
-# Protocol v1
+# AppPilot protocol v1
 
 The opted-in Debug App serves HTTP/1.1 on device loopback. USB forwarding crosses the paired-Mac trust boundary. Each connection carries exactly one request and one response with `Connection: close`; chunked bodies, compression, connection upgrades, directory paths, queries, and fragments are unsupported.
 
@@ -52,7 +52,7 @@ The CLI's high-level action and recording commands alone use the fixed write rou
 
 ## Authentication
 
-`IOS_DEBUG_TOKEN` is the only token source. When a token is configured, anonymous `GET /v1/health` returns only protocol version, `auth_required: true`, and `reachable: true`; it does not disclose service or App identity. Every other route requires the matching Bearer token. Without a token, health may also identify the service, bundle, and App version because the paired USB host is the trust boundary. Tokens are never accepted from a command flag or TOML and must not appear in logs or artifact metadata.
+`AP_IOS_DEBUG_TOKEN` is the only token source. When a token is configured, anonymous `GET /v1/health` returns only protocol version, `auth_required: true`, and `reachable: true`; it does not disclose service or App identity. Every other route requires the matching Bearer token. Without a token, health may also identify the service, bundle, and App version because the paired USB host is the trust boundary. Tokens are never accepted from a command flag or TOML and must not appear in logs or artifact metadata.
 
 ## Limits and timing
 

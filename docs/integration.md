@@ -1,27 +1,27 @@
-# App integration
+# AppPilot integration
 
-This guide integrates the local `IOSDebugKit` package into an iOS App. Every import, stored runtime value, startup call, state provider, and view modifier that references the package must be compiled only under `#if DEBUG`.
+This guide integrates the local `APIOSDebugKit` package into an iOS App. Every import, stored runtime value, startup call, state provider, and view modifier that references the package must be compiled only under `#if DEBUG`.
 
 ## Add the local package
 
-Add `DebugTools/IOSDebugKit` as a local Swift package. Xcode package product dependencies are target-scoped, not configuration-scoped: add the `IOSDebugKit` product only to a dedicated Debug app target. Keep every Release or production target free of this package dependency. The package supports iOS 16 or newer.
+Add `DebugTools/ap-ios-debug-kit` as a local Swift package. Xcode package product dependencies are target-scoped, not configuration-scoped: add the `APIOSDebugKit` product only to a dedicated Debug app target. Keep every Release or production target free of this package dependency. The package supports iOS 16 or newer.
 
 For a project that begins with one App target:
 
 1. In the project editor, duplicate the production App target and rename the copy to identify it as Debug-only.
 2. Give that target a Debug-only shared scheme whose Run and Test actions use the Debug configuration. Keep Profile and Archive on the production target's Release scheme.
-3. Add `IOSDebugKit` and `DebugTools/IOSDebugBootstrap.swift` only to the Debug target. Remove both from production target membership and dependencies.
+3. Add `APIOSDebugKit` and `DebugTools/APIOSDebugBootstrap.swift` only to the Debug target. Remove both from production target membership and dependencies.
 4. Keep every host reference under `#if DEBUG`. Build the production target in Release and scan its App plus object files before shipping; `make release-scan` demonstrates the required negative check.
 
-The included DebugDemo uses this topology: `DebugDemo` owns the package for Debug operation, while `DebugDemoRelease` is dependency-free and owns Release/Profile/Archive entry points.
+The included `APIOSDebugDemo` uses this topology: `APIOSDebugDemo` owns the package for Debug operation, while `APIOSDebugDemoRelease` is dependency-free and owns Release/Profile/Archive entry points.
 
 ## Start and stop the runtime
 
-Own one runtime for the App lifecycle. The listener binds device loopback on port `9876` by default. The optional bearer token comes only from `IOS_DEBUG_TOKEN`. Do not schedule start and stop together; start at Debug App startup and stop only from the owning coordinator's real shutdown or test-teardown callback.
+Own one runtime for the App lifecycle. The listener binds device loopback on port `9876` by default. The optional bearer token comes only from `AP_IOS_DEBUG_TOKEN`. Do not schedule start and stop together; start at Debug App startup and stop only from the owning coordinator's real shutdown or test-teardown callback.
 
 ```swift
 #if DEBUG
-import IOSDebugKit
+import APIOSDebugKit
 
 @MainActor
 final class AppDebugState: DebugStateProvider {
@@ -32,13 +32,13 @@ final class AppDebugState: DebugStateProvider {
 
 @MainActor
 final class AppDebugRuntimeOwner {
-    private let runtime: IOSDebugRuntime
+    private let runtime: APIOSDebugRuntime
 
     init(model: AppModel) throws {
-        let configuration = try IOSDebugRuntime.Configuration(
-            bearerToken: ProcessInfo.processInfo.environment["IOS_DEBUG_TOKEN"]
+        let configuration = try APIOSDebugRuntime.Configuration(
+            bearerToken: ProcessInfo.processInfo.environment["AP_IOS_DEBUG_TOKEN"]
         )
-        runtime = IOSDebugRuntime(
+        runtime = APIOSDebugRuntime(
             configuration: configuration,
             stateProvider: AppDebugState(model: model)
         )
@@ -81,25 +81,25 @@ Include only diagnostic state the App intentionally exposes. Never place bearer 
 Preview first, then apply:
 
 ```bash
-ios-debug app scaffold --into "$PWD" --dry-run
-ios-debug app scaffold --into "$PWD"
+ap-ios-debug app scaffold --into "$PWD" --dry-run
+ap-ios-debug app scaffold --into "$PWD"
 ```
 
 The command plans or creates exactly these integration outputs:
 
-- `DebugTools/IOSDebugKit/` — a byte-for-byte package copy.
-- `DebugTools/IOSDebugBootstrap.swift` — the canonical Debug-only runtime owner.
-- `.ios-debug.toml` — the project-local port and output-directory configuration.
+- `DebugTools/ap-ios-debug-kit/` — a byte-for-byte package copy.
+- `DebugTools/APIOSDebugBootstrap.swift` — the canonical Debug-only runtime owner.
+- `.ap-ios-debug.toml` — the project-local port and output-directory configuration.
 
 Dry-run reports `create`, `unchanged`, and `conflict` without writing. Apply is idempotent when bytes already match. If any destination differs, it reports all conflicts and changes nothing; there is no force overwrite and it never edits the Xcode project.
 
 Complete these four Xcode steps:
 
 1. Select **File > Add Package Dependencies…**.
-2. Click **Add Local…** and choose `<PROJECT_ROOT>/DebugTools/IOSDebugKit`.
-3. Add the `IOSDebugKit` product only to a dedicated Debug app target; ensure every Release or production target has no dependency on this package.
-4. Add `<PROJECT_ROOT>/DebugTools/IOSDebugBootstrap.swift` only to the Debug target and call `try await IOSDebugBootstrap.start()` from Debug startup code.
+2. Click **Add Local…** and choose `<PROJECT_ROOT>/DebugTools/ap-ios-debug-kit`.
+3. Add the `APIOSDebugKit` product only to a dedicated Debug app target; ensure every Release or production target has no dependency on this package.
+4. Add `<PROJECT_ROOT>/DebugTools/APIOSDebugBootstrap.swift` only to the Debug target and call `try await APIOSDebugBootstrap.start()` from Debug startup code.
 
-Call `await IOSDebugBootstrap.stop()` later, only at the owning shutdown boundary.
+Call `await APIOSDebugBootstrap.stop()` later, only at the owning shutdown boundary.
 
 Return to the [README](../README.md), or consult [protocol v1](protocol.md) and [troubleshooting](troubleshooting.md).

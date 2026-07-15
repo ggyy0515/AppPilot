@@ -1,4 +1,4 @@
-# Troubleshooting
+# AppPilot troubleshooting
 
 The JSON error code is stable; use its next action without exposing tokens, pairing data, or unrelated App payloads.
 
@@ -15,9 +15,9 @@ The JSON error code is stable; use its next action without exposing tokens, pair
 | `app_not_reachable` | The Debug listener cannot be reached. | Launch a Debug build and keep it foreground/running. |
 | `transport_failure` | The USB or loopback TCP connection failed. | Reconnect USB, verify the exact device ID, and retry. |
 | `request_timeout` | The App did not answer before the deadline. | Resume the App if it is stopped at a breakpoint. |
-| `protocol_mismatch` | The CLI and App disagree on protocol shape or version. | Align CLI and IOSDebugKit versions. |
-| `auth_required` | The App requires a bearer token. | Set `IOS_DEBUG_TOKEN` in the current shell without displaying it. |
-| `auth_failed` | The supplied bearer token was rejected. | Correct `IOS_DEBUG_TOKEN` without printing it. |
+| `protocol_mismatch` | The CLI and App disagree on protocol shape or version. | Align CLI and APIOSDebugKit versions. |
+| `auth_required` | The App requires a bearer token. | Set `AP_IOS_DEBUG_TOKEN` in the current shell without displaying it. |
+| `auth_failed` | The supplied bearer token was rejected. | Correct `AP_IOS_DEBUG_TOKEN` without printing it. |
 | `action_not_found` | The action is no longer registered. | List actions again because the generation changed. |
 | `action_disabled` | The current App state disables the action. | Inspect state, wait for it to become enabled, and list actions again. |
 | `action_failed` | The registered App closure failed. | Inspect state and Debug logs, correct the closure, then retry. |
@@ -34,8 +34,8 @@ The JSON error code is stable; use its next action without exposing tokens, pair
 ## No device
 
 ```bash
-ios-debug --json doctor
-ios-debug --json devices list
+ap-ios-debug --json doctor
+ap-ios-debug --json devices list
 ```
 
 Connect a physical device by USB, accept trust, unlock it, and rerun the list. A simulator result is not evidence of a real-device connection.
@@ -43,9 +43,9 @@ Connect a physical device by USB, accept trust, unlock it, and rerun the list. A
 ## Multiple devices
 
 ```bash
-ios-debug --json devices list
+ap-ios-debug --json devices list
 export DEVICE_ID='<copy one exact UDID from the list>'
-ios-debug --json app probe --device "$DEVICE_ID"
+ap-ios-debug --json app probe --device "$DEVICE_ID"
 ```
 
 Do not guess a name or identifier. `devices resolve --name` is available only for a non-empty exact device name.
@@ -55,8 +55,8 @@ Do not guess a name or identifier. `devices resolve --name` is available only fo
 Accept the device's trust prompt, unlock it, and keep it awake. Then verify the same exact device:
 
 ```bash
-ios-debug --json devices list
-ios-debug --json app probe --device "$DEVICE_ID"
+ap-ios-debug --json devices list
+ap-ios-debug --json app probe --device "$DEVICE_ID"
 ```
 
 ## Wrong token
@@ -64,9 +64,9 @@ ios-debug --json app probe --device "$DEVICE_ID"
 Set or correct the token in the current shell without echoing it or placing it in TOML, command flags, logs, or artifacts:
 
 ```bash
-read -r -s IOS_DEBUG_TOKEN
-export IOS_DEBUG_TOKEN
-ios-debug --json app probe --device "$DEVICE_ID"
+read -r -s AP_IOS_DEBUG_TOKEN
+export AP_IOS_DEBUG_TOKEN
+ap-ios-debug --json app probe --device "$DEVICE_ID"
 ```
 
 ## Stopped App
@@ -74,8 +74,8 @@ ios-debug --json app probe --device "$DEVICE_ID"
 Launch an opted-in Debug build and keep it foregrounded. If Xcode is stopped at a breakpoint, resume execution before retrying:
 
 ```bash
-ios-debug --json app probe --device "$DEVICE_ID"
-ios-debug --json state get --device "$DEVICE_ID"
+ap-ios-debug --json app probe --device "$DEVICE_ID"
+ap-ios-debug --json state get --device "$DEVICE_ID"
 ```
 
 ## Recording cleanup
@@ -83,8 +83,8 @@ ios-debug --json state get --device "$DEVICE_ID"
 Check status before recording and capture only when it adds diagnostic value:
 
 ```bash
-ios-debug --json recording status --device "$DEVICE_ID"
-ios-debug --json recording stop --device "$DEVICE_ID"
+ap-ios-debug --json recording status --device "$DEVICE_ID"
+ap-ios-debug --json recording stop --device "$DEVICE_ID"
 ```
 
 Run `recording stop` only when the returned state shows an active recording.

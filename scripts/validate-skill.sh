@@ -135,7 +135,7 @@ if ! "$ruby_bin" -e '
   display = interface["display_name"]
   short = interface["short_description"]
   prompt = interface["default_prompt"]
-  abort "invalid display_name" unless display == "sx iOS Debug"
+  abort "invalid display_name" unless display == "AppPilot iOS Debug"
   abort "invalid short_description" unless short.is_a?(String) && (25..64).cover?(short.length)
   abort "invalid default_prompt" unless prompt.is_a?(String) && prompt.include?("$ap-ios-debug-skill")
 ' "$metadata" >/dev/null 2>&1; then

@@ -1,6 +1,6 @@
-# ios-debug
+# AppPilot
 
-`ios-debug` is a Debug-only iOS diagnostics loop: a Swift package exposes registered App actions, state, screenshot, and ReplayKit recording; one Go binary reaches it over paired USB; `sx-ios-debug` teaches Codex the safe sequence.
+AppPilot is a Debug-only iOS diagnostics loop. Its `ap-ios-debug` CLI operates an explicitly integrated App through `APIOSDebugKit`, while `ap-ios-debug-skill` teaches Codex the safe sequence.
 
 ## Install
 
@@ -9,25 +9,27 @@ make verify
 make install-local
 ```
 
-The install owns `~/.local/bin/ios-debug`, `~/.local/share/ios-debug/IOSDebugKit`, and `~/.codex/skills/sx-ios-debug`. Add `~/.local/bin` to `PATH` if `command -v ios-debug` is empty. Remove only these installed copies with `make uninstall-local`.
+The install owns `~/.local/bin/ap-ios-debug`, `~/.local/share/ap-ios-debug/ap-ios-debug-kit`, and `~/.codex/skills/ap-ios-debug-skill`. Add `~/.local/bin` to `PATH` if `command -v ap-ios-debug` is empty. Remove only these installed copies with `make uninstall-local`.
 
 ## Quick start
 
 ```bash
-ios-debug app scaffold --into "$PWD" --dry-run
-ios-debug app scaffold --into "$PWD"
-ios-debug --json doctor
-ios-debug --json devices list
-ios-debug --json app probe --device "$DEVICE_ID"
-ios-debug --json actions list --device "$DEVICE_ID"
-ios-debug --json state get --device "$DEVICE_ID"
+ap-ios-debug app scaffold --into "$PWD" --dry-run
+ap-ios-debug app scaffold --into "$PWD"
+ap-ios-debug --json doctor
+ap-ios-debug --json devices list
+ap-ios-debug --json app probe --device "$DEVICE_ID"
+ap-ios-debug --json actions list --device "$DEVICE_ID"
+ap-ios-debug --json state get --device "$DEVICE_ID"
 ```
 
 Follow [App integration](docs/integration.md), [protocol v1](docs/protocol.md), and [troubleshooting](docs/troubleshooting.md).
 
 ## Safety boundary
 
-Release contains no server. The listener is loopback-only, USB uses the paired Mac boundary, raw writes and arbitrary selectors/coordinates/scripts are unavailable, destructive actions require explicit approval, and screenshots/recordings are sensitive mode-0600 artifacts. `IOS_DEBUG_TOKEN` is the only token source.
+Release contains no server. The listener is loopback-only, USB uses the paired Mac boundary, raw writes and arbitrary selectors/coordinates/scripts are unavailable, destructive actions require explicit approval, and screenshots/recordings are sensitive mode-0600 artifacts. `AP_IOS_DEBUG_TOKEN` is the only token source.
+
+By default, AppPilot stores captures below `.ap-ios-debug/artifacts`; treat that directory as sensitive diagnostic evidence.
 
 ## Verification
 

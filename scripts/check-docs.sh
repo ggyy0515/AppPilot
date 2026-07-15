@@ -3,6 +3,16 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 files=(README.md docs/integration.md docs/protocol.md docs/troubleshooting.md)
+legacy_scan_files=("$root/README.md")
+while IFS= read -r -d '' file; do
+    case "$file" in
+        "$root/docs/superpowers/specs/2026-07-15-ap-ios-debug-system-rename-design.md"|\
+        "$root/docs/superpowers/plans/2026-07-15-ap-ios-debug-system-rename.md")
+            continue
+            ;;
+    esac
+    legacy_scan_files+=("$file")
+done < <(find "$root/docs" -type f -name '*.md' -print0)
 
 require_fixed() {
     local pattern="$1"
@@ -49,6 +59,15 @@ done
 for heading in '## Install' '## Quick start' '## Safety boundary' '## Verification'; do
     require_fixed "$heading" "$root/README.md"
 done
+require_fixed '# AppPilot' "$root/README.md"
+require_fixed '# AppPilot' "$root/docs/integration.md"
+require_fixed '# AppPilot' "$root/docs/protocol.md"
+require_fixed '# AppPilot' "$root/docs/troubleshooting.md"
+require_fixed 'command -v ap-ios-debug' "$root/README.md"
+require_fixed 'ap-ios-debug --json doctor' "$root/README.md"
+require_fixed '.ap-ios-debug/artifacts' "$root/README.md"
+require_fixed 'APIOSDebugKit' "$root/README.md"
+require_fixed 'APIOSDebugBootstrap' "$root/docs/integration.md"
 for heading in '## Add the local package' '## Start and stop the runtime' '## Register actions' '## Provide state' '## Scaffold'; do
     require_fixed "$heading" "$root/docs/integration.md"
 done
@@ -99,5 +118,17 @@ if reject_extended 'product only to (the )?.*Debug configuration' "$root/docs/in
     echo "FAIL: docs prescribe unsupported configuration-scoped package linking" >&2
     exit 1
 fi
+for legacy_pattern in \
+    '(^|[^[:alnum:]-])ios-debug' \
+    '(^|[^[:alnum:]])sx-ios-debug' \
+    '(^|[^[:alnum:]])IOSDebug' \
+    '(^|[^[:alnum:]_])IOS_DEBUG' \
+    '(^|[^[:alnum:]])\.ios-debug' \
+    '(^|[^[:alnum:]])DebugDemo'; do
+    if reject_extended "$legacy_pattern" "${legacy_scan_files[@]}"; then
+        echo "FAIL: docs expose a legacy AppPilot name matching '$legacy_pattern'" >&2
+        exit 1
+    fi
+done
 
 echo "PASS: docs-check"

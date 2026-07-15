@@ -1,0 +1,4 @@
+interface:
+  display_name: "AppPilot iOS Debug"
+  short_description: "Operate AppPilot-integrated iOS Debug builds safely"
+  default_prompt: "Use $ap-ios-debug-skill to inspect and operate an AppPilot-integrated iOS Debug build."
