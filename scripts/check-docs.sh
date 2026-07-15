@@ -3,6 +3,9 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 files=(README.md docs/integration.md docs/protocol.md docs/troubleshooting.md)
+historical_cli="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
+historical_delivery="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-integration-delivery.md"
+historical_design="$root/docs/superpowers/specs/2026-07-12-ap-ios-debug-system-design.md"
 legacy_scan_files=("$root/README.md")
 while IFS= read -r -d '' file; do
     case "$file" in
@@ -130,5 +133,52 @@ for legacy_pattern in \
         exit 1
     fi
 done
+
+for required_text in \
+    'Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj' \
+    'ap-ios-debug-demo.xcscheme' \
+    'ap-ios-debug-demo-release.xcscheme' \
+    '-scheme ap-ios-debug-demo ' \
+    '-scheme ap-ios-debug-demo-release ' \
+    'com.openai.ap-ios-debug-demo'; do
+    require_fixed "$required_text" "$historical_delivery"
+done
+for forbidden_text in \
+    'Examples/ap-ios-debug-demo/APIOSDebugDemo.xcodeproj' \
+    'ReferencedContainer="container:APIOSDebugDemo.xcodeproj"' \
+    '-scheme APIOSDebugDemo ' \
+    'DEMO_SCHEME := APIOSDebugDemo' \
+    'com.openai.iosdebug.APIOSDebugDemo'; do
+    if grep -Fq -- "$forbidden_text" "$historical_delivery"; then
+        echo "FAIL: delivery plan confuses an external name with a Swift identifier: '$forbidden_text'" >&2
+        exit 1
+    fi
+done
+
+for required_text in \
+    'testdata/ap-ios-debug-kit' \
+    'DebugTools", "ap-ios-debug-kit' \
+    '"share", "ap-ios-debug", "ap-ios-debug-kit"' \
+    '"swift", "ap-ios-debug-kit"' \
+    'AppPilot ap-ios-debug version 0.1.0-dev'; do
+    require_fixed "$required_text" "$historical_cli"
+done
+for forbidden_text in \
+    'testdata/APIOSDebugKit' \
+    'DebugTools", "APIOSDebugKit' \
+    '"share", "ap-ios-debug", "APIOSDebugKit"' \
+    '"swift", "APIOSDebugKit"' \
+    'prints `ap-ios-debug version 0.1.0-dev`'; do
+    if grep -Fq -- "$forbidden_text" "$historical_cli"; then
+        echo "FAIL: CLI plan confuses an external name with a Swift identifier: '$forbidden_text'" >&2
+        exit 1
+    fi
+done
+
+require_fixed 'ap-ios-debug-demo.xcodeproj' "$historical_design"
+if grep -Fq -- 'APIOSDebugDemo.xcodeproj' "$historical_design"; then
+    echo 'FAIL: design spec uses a Swift identifier as the Xcode project filename' >&2
+    exit 1
+fi
 
 echo "PASS: docs-check"
