@@ -83,6 +83,46 @@ for value in "${canonical_prefix_case_variants[@]}"; do
   fi
 done
 
+approved_external_tokens=(
+  'ap-ios-debug'
+  'ap-ios-debug-kit'
+  'ap-ios-debug-demo'
+  'ap-ios-debug-system'
+  'ap-ios-debug-skill'
+  'ap-ios-debug.local'
+  '/tmp/ap-ios-debug/artifacts/test.png'
+  'Use ap-ios-debug, then continue.'
+  'github.com/yangy003/ap-ios-debug-system'
+  'mktemp -d /tmp/ap-ios-debug-install-test.XXXXXX'
+)
+for value in "${approved_external_tokens[@]}"; do
+  printf '%s\n' "$value" >"$wire_header"
+  "$checker" --scan-only "$wire_header" >/dev/null
+done
+
+external_token_case_variants=(
+  'ap-ios-debug-Kit'
+  'ap-ios-debug-DEMO'
+  'ap-ios-debug-System'
+  'ap-ios-debug-Skill'
+  'ap-ios-debug.Local'
+  'ap-ios-debugX'
+  'ap-ios-debug-install-test.XXXXXY'
+)
+for value in "${external_token_case_variants[@]}"; do
+  printf '%s\n' "$value" >"$wire_header"
+  token_status=0
+  "$checker" --scan-only "$wire_header" >/dev/null 2>&1 || token_status=$?
+  if [[ "$token_status" -eq 0 ]]; then
+    echo "FAIL: external token accepted invalid canonical spelling $value" >&2
+    exit 1
+  fi
+  if [[ "$token_status" -ne 1 ]]; then
+    echo "FAIL: invalid external token $value returned $token_status, expected 1" >&2
+    exit 1
+  fi
+done
+
 cli_plan="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
 if rg -q 'x-''ap-ios-debug-' "$cli_plan"; then
   echo 'FAIL: CLI plan renamed a frozen wire header prefix' >&2

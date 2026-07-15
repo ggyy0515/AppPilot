@@ -7,19 +7,62 @@ root="$(pwd -P)"
 failures=0
 legacy_patterns=(
   'sx-ios-debug'
-  'ap-(?!ios-debug)(?i:ios-debug)'
   # Preserve frozen wire headers; the bare quoted lowercase prefix is documentation only.
-  '(?<!ap-)(?i:(?<!x-)ios-debug)|(?!(?:x-ios-debug(?:-[a-z0-9][a-z0-9-]*|-(?=`))|X-IOS-Debug(?:-[A-Za-z0-9][A-Za-z0-9-]*|-(?="))))(?i:x-ios-debug)'
+  '(?i:(?<!ap-)(?<!x-)ios-debug)|(?!(?:x-ios-debug(?:-[a-z0-9][a-z0-9-]*|-(?=`))|X-IOS-Debug(?:-[A-Za-z0-9][A-Za-z0-9-]*|-(?="))))(?i:x-ios-debug)'
   '(?<!AP)IOSDebug'
   '(?<!AP_)IOS_DEBUG'
   '(?<!\.ap)\.ios-debug'
   '(?<!APIOS)DebugDemo'
 )
 
+validate_external_candidates() {
+  local source="$1"
+  local candidates="$2"
+  local candidate canonical_candidate
+  while IFS= read -r candidate; do
+    [[ -n "$candidate" ]] || continue
+    canonical_candidate="$candidate"
+    # XXXXXX is mktemp syntax, not part of the external product token.
+    case "$canonical_candidate" in
+      *.XXXXXX) canonical_candidate="${canonical_candidate%.XXXXXX}" ;;
+    esac
+    if [[ ! "$canonical_candidate" =~ ^ap-ios-debug([.-][a-z0-9]+)*$ ]]; then
+      echo "FAIL: invalid external canonical token in $source: $candidate" >&2
+      failures=1
+    fi
+  done <<<"$candidates"
+}
+
+scan_external_candidates_file() {
+  local file="$1"
+  local candidates candidate_rc
+  candidate_rc=0
+  candidates="$(rg -o -I --pcre2 '(?i:ap-ios-debug)(?:[A-Za-z0-9]+|[.-][A-Za-z0-9]+)*' "$file" 2>/dev/null)" || candidate_rc=$?
+  if [[ "$candidate_rc" -gt 1 ]]; then
+    echo "FAIL: external token scan error for $file" >&2
+    exit "$candidate_rc"
+  fi
+  validate_external_candidates "$file" "$candidates"
+}
+
+scan_external_candidates_text() {
+  local source="$1"
+  local value="$2"
+  local candidates candidate_rc
+  candidate_rc=0
+  candidates="$(printf '%s\n' "$value" | rg -o --pcre2 '(?i:ap-ios-debug)(?:[A-Za-z0-9]+|[.-][A-Za-z0-9]+)*')" || candidate_rc=$?
+  if [[ "$candidate_rc" -gt 1 ]]; then
+    echo "FAIL: external token scan error for $source" >&2
+    exit "$candidate_rc"
+  fi
+  validate_external_candidates "$source" "$candidates"
+}
+
 scan_file() {
   local file="$1"
   local pattern matches scan_rc
   [[ -f "$file" ]] || return 0
+  scan_external_candidates_file "$file"
   for pattern in "${legacy_patterns[@]}"; do
     scan_rc=0
     matches="$(rg -n -I --pcre2 "$pattern" "$file" 2>/dev/null)" || scan_rc=$?
@@ -38,6 +81,7 @@ scan_file() {
 scan_path() {
   local file="$1"
   local pattern
+  scan_external_candidates_text "tracked path $file" "$file"
   for pattern in "${legacy_patterns[@]}"; do
     if printf '%s\n' "$file" | rg -q --pcre2 "$pattern"; then
       echo "FAIL: legacy name in tracked path $file" >&2
