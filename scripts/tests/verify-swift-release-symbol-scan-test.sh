@@ -5,7 +5,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=../verify-swift-release.sh
 source "$root/scripts/verify-swift-release.sh"
 
-work="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-symbol-scan-test.XXXXXX")"
+work="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-symbol-scan-test.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 
 expect_rejected() {
@@ -24,15 +24,15 @@ expect_accepted() {
   fi
 }
 
-printf '%s\n' '0000000000000000 T _IOSDebugRuntime_forbidden' '0000000000000010 T _clean' > "$work/small-leak.symbols"
+printf '%s\n' '0000000000000000 T _APIOSDebugRuntime_forbidden' '0000000000000010 T _clean' > "$work/small-leak.symbols"
 expect_rejected "$work/small-leak.symbols"
 
-printf '%s\n' '0000000000000000 T _$s11IOSDebugKit19DebugActionRegistryC6sharedACvgZ' > "$work/large-leak.symbols"
+printf '%s\n' '0000000000000000 T _$s11APIOSDebugKit19DebugActionRegistryC6sharedACvgZ' > "$work/large-leak.symbols"
 awk 'BEGIN { for (i = 0; i < 200000; i++) print "0000000000000010 T _clean_" i }' >> "$work/large-leak.symbols"
 expect_rejected "$work/large-leak.symbols"
 
 printf '%s\n' \
-  '/tmp/IOSDebugRuntime.o:' \
+  '/tmp/APIOSDebugRuntime.o:' \
   '/tmp/DebugActionRegistry.o:' \
   '/tmp/ScreenshotCapture.o:' \
   '/tmp/RecordingController.o:' \

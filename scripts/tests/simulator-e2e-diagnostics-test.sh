@@ -6,7 +6,7 @@ secret='simulator-diagnostic-secret'
 
 # shellcheck source=../secret-scan.sh
 source "$root/scripts/secret-scan.sh"
-scan_work="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-secret-scan-test.XXXXXX")"
+scan_work="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-secret-scan-test.XXXXXX")"
 trap 'rm -rf "$scan_work"' EXIT
 mkdir -p "$scan_work/clean" "$scan_work/match"
 printf 'ordinary output\n' >"$scan_work/clean/output.txt"
@@ -45,25 +45,25 @@ fi
 
 set +e
 diagnostic="$(
-  IOS_DEBUG_E2E_SCHEME='IOSDebugMissingScheme' \
-  IOS_DEBUG_E2E_TOKEN="$secret" \
+  AP_IOS_DEBUG_E2E_SCHEME='IOSDebugMissingScheme' \
+  AP_IOS_DEBUG_E2E_TOKEN="$secret" \
   "$root/scripts/simulator-e2e.sh" 2>&1
 )"
 status=$?
 set -e
 
 test "$status" -ne 0
-grep -Fq 'FAIL: build DebugDemo' <<<"$diagnostic"
+grep -Fq 'FAIL: build APIOSDebugDemo' <<<"$diagnostic"
 grep -Fq 'IOSDebugMissingScheme' <<<"$diagnostic"
 if grep -Fq "$secret" <<<"$diagnostic"; then
-  echo "simulator E2E diagnostics leaked IOS_DEBUG_TOKEN" >&2
+  echo "simulator E2E diagnostics leaked AP_IOS_DEBUG_TOKEN" >&2
   exit 1
 fi
 
 set +e
 diagnostic="$(
-  IOS_DEBUG_E2E_PORT=1 \
-  IOS_DEBUG_E2E_TOKEN="$secret" \
+  AP_IOS_DEBUG_E2E_PORT=1 \
+  AP_IOS_DEBUG_E2E_TOKEN="$secret" \
   "$root/scripts/simulator-e2e.sh" 2>&1
 )"
 status=$?
@@ -73,7 +73,7 @@ test "$status" -ne 0
 grep -Fq 'FAIL: wait for anonymous health probe' <<<"$diagnostic"
 grep -Eq '"code":"(app_not_reachable|transport_failure)"' <<<"$diagnostic"
 if grep -Fq "$secret" <<<"$diagnostic"; then
-  echo "simulator E2E readiness diagnostics leaked IOS_DEBUG_TOKEN" >&2
+  echo "simulator E2E readiness diagnostics leaked AP_IOS_DEBUG_TOKEN" >&2
   exit 1
 fi
 

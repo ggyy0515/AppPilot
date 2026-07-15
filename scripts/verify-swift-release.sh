@@ -5,10 +5,10 @@ verify_release_symbols() {
   local symbols_file="$1"
   if awk '
     /\.o:$/ { next }
-    /IOSDebugRuntime|DebugActionRegistry|ScreenshotCapture|RecordingController|iosDebugAction/ { found = 1 }
+    /APIOSDebugRuntime|DebugActionRegistry|ScreenshotCapture|RecordingController|iosDebugAction/ { found = 1 }
     END { exit found ? 0 : 1 }
   ' "$symbols_file"; then
-    echo "Release symbol leaked from IOSDebugKit." >&2
+    echo "Release symbol leaked from APIOSDebugKit." >&2
     return 1
   fi
 }
@@ -19,17 +19,17 @@ fi
 
 scripts/tests/verify-swift-release-symbol-scan-test.sh
 
-work="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-swift-release.XXXXXX")"
+work="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-swift-release.XXXXXX")"
 debug_derived="$work/DebugDerivedData"
 release_derived="$work/ReleaseDerivedData"
 trap 'rm -rf "$work"' EXIT
 
-swift test --package-path swift/IOSDebugKit
+swift test --package-path swift/ap-ios-debug-kit
 
 (
-  cd swift/IOSDebugKit
-  xcodebuild -scheme IOSDebugKit -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath "$debug_derived" CODE_SIGNING_ALLOWED=NO build
-  xcodebuild -scheme IOSDebugKit -configuration Release -destination 'generic/platform=iOS Simulator' -derivedDataPath "$release_derived" CODE_SIGNING_ALLOWED=NO build
+  cd swift/ap-ios-debug-kit
+  xcodebuild -scheme APIOSDebugKit -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath "$debug_derived" CODE_SIGNING_ALLOWED=NO build
+  xcodebuild -scheme APIOSDebugKit -configuration Release -destination 'generic/platform=iOS Simulator' -derivedDataPath "$release_derived" CODE_SIGNING_ALLOWED=NO build
 )
 
 debug_object_count="$(find "$debug_derived/Build/Intermediates.noindex" -type f -name '*.o' | wc -l | tr -d '[:space:]')"
@@ -55,7 +55,7 @@ markers=(
   "/v1/actions"
   "/v1/screenshot"
   "/v1/recording"
-  "IOSDebugRuntime"
+  "APIOSDebugRuntime"
   "DebugActionRegistry"
   "NWListener"
 )

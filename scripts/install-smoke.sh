@@ -4,16 +4,16 @@ set -euo pipefail
 prefix="${PREFIX:?PREFIX is required}"
 codex_home="${CODEX_HOME:?CODEX_HOME is required}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
-tmp="$(mktemp -d /tmp/ios-debug-installed.XXXXXX)"
+tmp="$(mktemp -d /tmp/ap-ios-debug-installed.XXXXXX)"
 trap 'rm -rf -- "$tmp"' EXIT
 cd /tmp
 
 export PATH="$prefix/bin:$PATH"
-test "$(command -v ios-debug)" = "$prefix/bin/ios-debug"
-ios-debug --help >"$tmp/help.txt"
-grep -q '^  ios-debug \[command\]$' "$tmp/help.txt"
+test "$(command -v ap-ios-debug)" = "$prefix/bin/ap-ios-debug"
+ap-ios-debug --help >"$tmp/help.txt"
+grep -q '^  ap-ios-debug \[command\]$' "$tmp/help.txt"
 doctor_status=0
-ios-debug --json doctor >"$tmp/doctor.json" || doctor_status=$?
+ap-ios-debug --json doctor >"$tmp/doctor.json" || doctor_status=$?
 [[ "$doctor_status" -ge 0 && "$doctor_status" -le 6 && "$doctor_status" -ne 1 ]]
 /usr/bin/ruby -rjson -e '
   document = JSON.parse(File.read(ARGV.fetch(0)))
@@ -29,14 +29,14 @@ ios-debug --json doctor >"$tmp/doctor.json" || doctor_status=$?
 ' "$tmp/doctor.json"
 
 mkdir -p "$tmp/Project"
-ios-debug --json app scaffold --into "$tmp/Project" >"$tmp/scaffold.json"
+ap-ios-debug --json app scaffold --into "$tmp/Project" >"$tmp/scaffold.json"
 /usr/bin/ruby -rjson -e 'JSON.parse(File.read(ARGV.fetch(0)))' "$tmp/scaffold.json"
-cmp "$prefix/share/ios-debug/IOSDebugKit/Templates/IOSDebugBootstrap.swift" \
-  "$tmp/Project/DebugTools/IOSDebugBootstrap.swift"
-diff -qr "$prefix/share/ios-debug/IOSDebugKit" \
-  "$tmp/Project/DebugTools/IOSDebugKit" >/dev/null
-cmp "$root/codex/skills/sx-ios-debug/agents/openai.yaml" \
-  "$codex_home/skills/sx-ios-debug/agents/openai.yaml"
-SKILL_PATH="$codex_home/skills/sx-ios-debug" "$root/scripts/validate-skill.sh"
-SKILL_PATH="$codex_home/skills/sx-ios-debug/SKILL.md" "$root/scripts/validate-skill.sh"
+cmp "$prefix/share/ap-ios-debug/ap-ios-debug-kit/Templates/APIOSDebugBootstrap.swift" \
+  "$tmp/Project/DebugTools/APIOSDebugBootstrap.swift"
+diff -qr "$prefix/share/ap-ios-debug/ap-ios-debug-kit" \
+  "$tmp/Project/DebugTools/ap-ios-debug-kit" >/dev/null
+cmp "$root/codex/skills/ap-ios-debug-skill/agents/openai.yaml" \
+  "$codex_home/skills/ap-ios-debug-skill/agents/openai.yaml"
+SKILL_PATH="$codex_home/skills/ap-ios-debug-skill" "$root/scripts/validate-skill.sh"
+SKILL_PATH="$codex_home/skills/ap-ios-debug-skill/SKILL.md" "$root/scripts/validate-skill.sh"
 echo "PASS: install-smoke cwd=/tmp"

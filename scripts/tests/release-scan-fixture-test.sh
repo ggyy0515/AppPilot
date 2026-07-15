@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-work="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-release-fixture.XXXXXX")"
+work="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-release-fixture.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 
 mkdir -p "$work/tools" "$work/fixture with spaces/Debug.app/Frameworks/Kit.framework" \
@@ -35,7 +35,7 @@ export OBJCOPY_BIN="$work/tools/objcopy"
 export STRINGS_BIN="$work/tools/strings"
 export NM_BIN="$work/tools/nm"
 export DEMANGLE_BIN="$work/tools/demangle"
-export IOS_DEBUG_RELEASE_SCAN_LIBRARY_ONLY=1
+export AP_IOS_DEBUG_RELEASE_SCAN_LIBRARY_ONLY=1
 # shellcheck source=../release-scan.sh
 source "$root/scripts/release-scan.sh"
 
@@ -54,7 +54,7 @@ chmod +x "$work/tool discovery with spaces/xcrun"
 discovered="$({
   unset OBJCOPY_BIN STRIP_BIN DEMANGLE_BIN
   XCRUN_BIN="$work/tool discovery with spaces/xcrun"
-  IOS_DEBUG_RELEASE_SCAN_LIBRARY_ONLY=1
+  AP_IOS_DEBUG_RELEASE_SCAN_LIBRARY_ONLY=1
   source "$root/scripts/release-scan.sh"
   printf '%s\n%s\n%s\n' "$OBJCOPY_BIN" "$STRIP_BIN" "$DEMANGLE_BIN"
 })"
@@ -64,8 +64,8 @@ grep -Fxq "$work/tools/demangle" <<<"$discovered"
 
 app="$work/fixture with spaces/Debug.app"
 objects="$work/fixture with spaces/objects"
-printf 'ordinary main image\n' >"$app/DebugDemo"
-printf 'STRING:/v1/actions\nSYMBOL:IOSDebugRuntime\n' >"$app/DebugDemo.debug.dylib"
+printf 'ordinary main image\n' >"$app/APIOSDebugDemo"
+printf 'STRING:/v1/actions\nSYMBOL:APIOSDebugRuntime\n' >"$app/APIOSDebugDemo.debug.dylib"
 printf 'ordinary framework\n' >"$app/Frameworks/Kit.framework/Kit"
 printf 'SYMBOL:DebugActionRegistry\n' >"$objects/runtime object.o"
 
@@ -91,8 +91,8 @@ cat >"$work/tools/objcopy" <<'EOF'
 grep -v '^DWARF:' "$2" >"$3"
 EOF
 chmod +x "$work/tools/objcopy"
-printf 'DWARF:/tmp/IOSDebugRuntime.swift\nSTRING:ordinary\n' >"$objects/path only.o"
-printf 'ordinary main image\n' >"$app/DebugDemo.debug.dylib"
+printf 'DWARF:/tmp/APIOSDebugRuntime.swift\nSTRING:ordinary\n' >"$objects/path only.o"
+printf 'ordinary main image\n' >"$app/APIOSDebugDemo.debug.dylib"
 printf 'ordinary object\n' >"$objects/runtime object.o"
 scan_artifacts negative "$app" "$objects" "$work/negative-clean"
 

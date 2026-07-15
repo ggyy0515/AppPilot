@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-input="${SKILL_PATH:-$root/codex/skills/sx-ios-debug}"
+input="${SKILL_PATH:-$root/codex/skills/ap-ios-debug-skill}"
 grep_bin="${GREP_BIN:-/usr/bin/grep}"
 ruby_bin="${RUBY_BIN:-/usr/bin/ruby}"
 if [[ -d "$input" ]]; then
@@ -86,31 +86,31 @@ set_match_count() {
 [[ -x "$ruby_bin" ]] || fail "missing executable Ruby YAML parser: $ruby_bin"
 [[ -f "$skill" ]] || fail "missing $skill"
 [[ -f "$metadata" ]] || fail "missing $metadata"
-require_match 'invalid skill name' -Fxq 'name: sx-ios-debug' "$skill"
+require_match 'invalid skill name' -Fxq 'name: ap-ios-debug-skill' "$skill"
 require_match 'description must define its trigger' -Fq 'description: Use when ' "$skill"
 
 required=(
-  'command -v ios-debug'
-  'ios-debug --json doctor'
-  'ios-debug --json devices list'
-  'ios-debug --json app probe'
-  'ios-debug --json actions list'
-  'ios-debug --json state get'
-  'ios-debug --json screenshot capture'
-  'ios-debug --json recording status'
-  'ios-debug --json recording start'
-  'ios-debug --json recording stop'
-  'ios-debug --json request get /v1/capabilities'
+  'command -v ap-ios-debug'
+  'ap-ios-debug --json doctor'
+  'ap-ios-debug --json devices list'
+  'ap-ios-debug --json app probe'
+  'ap-ios-debug --json actions list'
+  'ap-ios-debug --json state get'
+  'ap-ios-debug --json screenshot capture'
+  'ap-ios-debug --json recording status'
+  'ap-ios-debug --json recording start'
+  'ap-ios-debug --json recording stop'
+  'ap-ios-debug --json request get /v1/capabilities'
 )
 for required_text in "${required[@]}"; do
   require_match "missing required text: $required_text" -Fq "$required_text" "$skill"
 done
 
-set_first_line 'command -v ios-debug' installation_line
-set_first_line 'ios-debug --json doctor' doctor_line
-set_first_line 'ios-debug --json devices list' devices_line
-set_first_line 'ios-debug --json app probe' probe_line
-set_first_line 'ios-debug --json actions list' actions_line
+set_first_line 'command -v ap-ios-debug' installation_line
+set_first_line 'ap-ios-debug --json doctor' doctor_line
+set_first_line 'ap-ios-debug --json devices list' devices_line
+set_first_line 'ap-ios-debug --json app probe' probe_line
+set_first_line 'ap-ios-debug --json actions list' actions_line
 [[ "$installation_line" -lt "$doctor_line" ]] || fail 'installation check must precede doctor'
 [[ "$doctor_line" -lt "$devices_line" ]] || fail 'doctor must precede device discovery'
 [[ "$probe_line" -lt "$actions_line" ]] || fail 'app probe must precede action discovery'
@@ -123,7 +123,7 @@ require_match 'missing current-action selection rule' -Fq 'Never invent or reuse
 require_match 'missing pipeline failure rule' -Fq 'set -euo pipefail' "$skill"
 require_match 'missing recording cleanup rule' -Fq 'best-effort stop' "$skill"
 require_match 'missing artifact verification rule' -Fq 'returned local path exists' "$skill"
-reject_match 'skill contains a raw write request' -Eqi 'ios-debug .*request (post|put|patch|delete)' "$skill"
+reject_match 'skill contains a raw write request' -Eqi 'ap-ios-debug .*request (post|put|patch|delete)' "$skill"
 set_match_count '^#### Copyable example ' example_count
 [[ "$example_count" -eq 3 ]] || fail 'skill must contain exactly three copyable examples'
 
@@ -137,7 +137,7 @@ if ! "$ruby_bin" -e '
   prompt = interface["default_prompt"]
   abort "invalid display_name" unless display == "sx iOS Debug"
   abort "invalid short_description" unless short.is_a?(String) && (25..64).cover?(short.length)
-  abort "invalid default_prompt" unless prompt.is_a?(String) && prompt.include?("$sx-ios-debug")
+  abort "invalid default_prompt" unless prompt.is_a?(String) && prompt.include?("$ap-ios-debug-skill")
 ' "$metadata" >/dev/null 2>&1; then
   fail "invalid skill metadata YAML: $metadata"
 fi

@@ -87,11 +87,11 @@ for route in \
     'DELETE /v1/recordings/{id}'; do
     require_fixed "$route" "$root/docs/protocol.md"
 done
-if reject_extended 'ios-debug .*request (post|put|patch|delete)' "$root/README.md" "$root/docs"; then
+if reject_extended 'ap-ios-debug .*request (post|put|patch|delete)' "$root/README.md" "$root/docs"; then
     echo "FAIL: docs expose a raw write request" >&2
     exit 1
 fi
-if reject_extended 'ios-debug .*--token|^[[:space:]]*token[[:space:]]*=' "$root/README.md" "$root/docs"; then
+if reject_extended 'ap-ios-debug .*--token|^[[:space:]]*token[[:space:]]*=' "$root/README.md" "$root/docs"; then
     echo "FAIL: docs expose an unsupported token source" >&2
     exit 1
 fi

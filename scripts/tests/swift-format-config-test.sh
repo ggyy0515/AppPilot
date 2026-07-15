@@ -2,8 +2,8 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd -P)"
-config="$root/swift/IOSDebugKit/.swift-format"
-tmp="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-swift-format.XXXXXX")"
+config="$root/swift/ap-ios-debug-kit/.swift-format"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-swift-format.XXXXXX")"
 trap 'rm -rf -- "$tmp"' EXIT
 
 swift format dump-configuration >"$tmp/default.json"

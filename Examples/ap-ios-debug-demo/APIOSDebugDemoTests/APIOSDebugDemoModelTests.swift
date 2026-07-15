@@ -1,13 +1,13 @@
 import XCTest
-@testable import DebugDemo
+@testable import APIOSDebugDemo
 #if DEBUG
-import IOSDebugKit
+import APIOSDebugKit
 #endif
 
 @MainActor
-final class DebugDemoModelTests: XCTestCase {
+final class APIOSDebugDemoModelTests: XCTestCase {
     func testIncrementAndSettingsProduceStableSnapshot() {
-        let model = DebugDemoModel()
+        let model = APIOSDebugDemoModel()
         XCTAssertEqual(model.snapshot, .init(screen: "home", counter: 0, lastAction: nil))
 
         model.increment()
@@ -20,7 +20,7 @@ final class DebugDemoModelTests: XCTestCase {
     }
 
     func testResetIsDeterministic() {
-        let model = DebugDemoModel()
+        let model = APIOSDebugDemoModel()
         model.increment()
         model.reset()
         XCTAssertEqual(model.snapshot, .init(screen: "home", counter: 0, lastAction: "counter.reset"))
@@ -28,7 +28,7 @@ final class DebugDemoModelTests: XCTestCase {
 
 #if DEBUG
     func testDemoStateProviderEncodesStableKeys() throws {
-        let model = DebugDemoModel()
+        let model = APIOSDebugDemoModel()
         model.increment()
         let provider = DemoStateProvider(model: model)
         let data = try JSONEncoder().encode(provider.snapshot())

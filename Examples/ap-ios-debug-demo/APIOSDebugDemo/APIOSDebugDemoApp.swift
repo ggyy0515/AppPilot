@@ -1,31 +1,31 @@
 import SwiftUI
 #if DEBUG
-import IOSDebugKit
+import APIOSDebugKit
 #endif
 
 @main
-struct DebugDemoApp: App {
-    @StateObject private var model: DebugDemoModel
+struct APIOSDebugDemoApp: App {
+    @StateObject private var model: APIOSDebugDemoModel
 #if DEBUG
-    private let runtime: IOSDebugRuntime
+    private let runtime: APIOSDebugRuntime
 #endif
 
     init() {
-        let model = DebugDemoModel()
+        let model = APIOSDebugDemoModel()
         _model = StateObject(wrappedValue: model)
 #if DEBUG
         let environment = ProcessInfo.processInfo.environment
-        let port = environment["IOS_DEBUG_PORT"].flatMap(UInt16.init) ?? 9876
-        let configuration: IOSDebugRuntime.Configuration
+        let port = environment["AP_IOS_DEBUG_PORT"].flatMap(UInt16.init) ?? 9876
+        let configuration: APIOSDebugRuntime.Configuration
         do {
             configuration = try .init(
                 port: port,
-                bearerToken: environment["IOS_DEBUG_TOKEN"]
+                bearerToken: environment["AP_IOS_DEBUG_TOKEN"]
             )
         } catch {
-            preconditionFailure("Invalid IOSDebugRuntime configuration: \(error)")
+            preconditionFailure("Invalid APIOSDebugRuntime configuration: \(error)")
         }
-        runtime = IOSDebugRuntime(
+        runtime = APIOSDebugRuntime(
             configuration: configuration,
             stateProvider: DemoStateProvider(model: model)
         )
@@ -40,7 +40,7 @@ struct DebugDemoApp: App {
                     do {
                         try await runtime.start()
                     } catch {
-                        assertionFailure("IOSDebugRuntime failed to start: \(error)")
+                        assertionFailure("APIOSDebugRuntime failed to start: \(error)")
                     }
                 }
                 .onDisappear {

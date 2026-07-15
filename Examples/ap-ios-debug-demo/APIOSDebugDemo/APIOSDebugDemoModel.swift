@@ -1,6 +1,6 @@
 import Foundation
 
-struct DebugDemoSnapshot: Codable, Equatable, Sendable {
+struct APIOSDebugDemoSnapshot: Codable, Equatable, Sendable {
     let screen: String
     let counter: Int
     let lastAction: String?
@@ -13,12 +13,12 @@ struct DebugDemoSnapshot: Codable, Equatable, Sendable {
 }
 
 @MainActor
-final class DebugDemoModel: ObservableObject {
+final class APIOSDebugDemoModel: ObservableObject {
     @Published private(set) var counter = 0
     @Published private(set) var screen = "home"
     @Published private(set) var lastAction: String?
 
-    var snapshot: DebugDemoSnapshot {
+    var snapshot: APIOSDebugDemoSnapshot {
         .init(screen: screen, counter: counter, lastAction: lastAction)
     }
 

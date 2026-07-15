@@ -3,7 +3,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd -P)"
 subject="$root/scripts/device-smoke.sh"
-tmp="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-device-test.XXXXXX")"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-device-test.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -32,8 +32,8 @@ cat >"$bin/xcodebuild" <<'EOF'
 state="${FIXTURE_STATE:?}"
 printf 'xcodebuild\n' >>"$state/events"
 case "${FIXTURE_SCENARIO:-success}" in
-  signing_failure) echo 'Signing for DebugDemo requires a development team.' >&2; exit 65 ;;
-  signing_profile_failure) echo "error: No profiles for 'com.openai.demo' were found: Xcode couldn't find any iOS App Development provisioning profiles." >&2; exit 65 ;;
+  signing_failure) echo 'Signing for APIOSDebugDemo requires a development team.' >&2; exit 65 ;;
+  signing_profile_failure) echo "error: No profiles for 'com.openai.ap-ios-debug-demo' were found: Xcode couldn't find any iOS App Development provisioning profiles." >&2; exit 65 ;;
   signing_codesign_failure) echo 'Command CodeSign failed with a nonzero exit code' >&2; exit 65 ;;
   compile_failure) echo '/tmp/ContentView.swift:12:3: error: cannot find value' >&2; exit 65 ;;
   compile_provisioning_path) echo '/tmp/ProvisioningView.swift:12:3: error: cannot find value' >&2; exit 65 ;;
@@ -44,7 +44,7 @@ derived=""
 while [[ $# -gt 0 ]]; do
   if [[ "$1" == "-derivedDataPath" ]]; then derived="$2"; shift 2; else shift; fi
 done
-mkdir -p "$derived/Build/Products/Debug-iphoneos/DebugDemo.app"
+mkdir -p "$derived/Build/Products/Debug-iphoneos/APIOSDebugDemo.app"
 EOF
 
 cat >"$bin/xcrun" <<'EOF'
@@ -58,8 +58,8 @@ if [[ "$*" == device\ install\ app* ]]; then
   exit 0
 fi
 if [[ "$*" == device\ process\ launch* ]]; then
-  [[ -n "${DEVICECTL_CHILD_IOS_DEBUG_TOKEN:-}" ]] || { echo 'missing child token' >&2; exit 1; }
-  printf '%s' "$DEVICECTL_CHILD_IOS_DEBUG_TOKEN" | shasum -a 256 | awk '{print $1}' >"$state/token-sha"
+  [[ -n "${DEVICECTL_CHILD_AP_IOS_DEBUG_TOKEN:-}" ]] || { echo 'missing child token' >&2; exit 1; }
+  printf '%s' "$DEVICECTL_CHILD_AP_IOS_DEBUG_TOKEN" | shasum -a 256 | awk '{print $1}' >"$state/token-sha"
   printf 'launch-token=set\n' >>"$state/events"
   touch "$state/launched"
   output=""
@@ -85,13 +85,13 @@ test -s "$1"
 printf 'avfoundation=valid\n' >>"${FIXTURE_STATE:?}/events"
 EOF
 
-cat >"$bin/ios-debug" <<'EOF'
+cat >"$bin/ap-ios-debug" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 state="${FIXTURE_STATE:?}"
 scenario="${FIXTURE_SCENARIO:-success}"
 args=" $* "
-token="${IOS_DEBUG_TOKEN:-}"
+token="${AP_IOS_DEBUG_TOKEN:-}"
 printf 'cli token=%s args=%s\n' "$([[ -n "$token" ]] && echo set || echo unset)" "$*" >>"$state/events"
 
 emit_error() { printf '{"ok":false,"error":{"code":"%s","message":"fixture"}}\n' "$1"; exit "$2"; }
@@ -159,7 +159,7 @@ if [[ "$args" == *' recording stop '* ]]; then
   deleted=true; [[ "$scenario" == recording_not_deleted ]] && deleted=false
   printf '{"ok":true,"data":{"path":"%s","byte_count":%s,"mime":"video/mp4","sha256":"%s","recording_id":"rec-1","duration_ms":%s,"device_file_deleted":%s}}\n' "$out" "$size" "$sha" "$duration" "$deleted"; exit 0
 fi
-echo "unexpected ios-debug: $*" >&2
+echo "unexpected ap-ios-debug: $*" >&2
 exit 9
 EOF
 
@@ -171,8 +171,8 @@ run_case() {
   rm -rf "$dir"; mkdir -p "$dir"
   set +e
   env FIXTURE_SCENARIO="$scenario" FIXTURE_STATE="$dir" \
-    IOS_DEBUG_REAL_DEVICE_SMOKE=1 IOS_DEBUG_DEVICE='Fixture Phone' \
-    IOS_DEBUG_DEVELOPMENT_TEAM=ABCDE12345 IOS_DEBUG_BIN="$bin/ios-debug" \
+    AP_IOS_DEBUG_REAL_DEVICE_SMOKE=1 AP_IOS_DEBUG_DEVICE='Fixture Phone' \
+    AP_IOS_DEBUG_DEVELOPMENT_TEAM=ABCDE12345 AP_IOS_DEBUG_BIN="$bin/ap-ios-debug" \
     XCRUN_BIN="$bin/xcrun" XCODEBUILD_BIN="$bin/xcodebuild" \
     UUIDGEN_BIN="$bin/uuidgen" SLEEP_BIN="$bin/sleep" \
     MP4_VALIDATOR_BIN="$bin/validate-mp4" DERIVED_DATA="$dir/Derived Data" \
@@ -184,9 +184,9 @@ run_case() {
 
 # Default guard is exactly one SKIP and does not touch injected tools.
 guard="$tmp/guard"; mkdir -p "$guard"
-env FIXTURE_STATE="$guard" IOS_DEBUG_BIN="$bin/ios-debug" XCRUN_BIN="$bin/xcrun" \
+env FIXTURE_STATE="$guard" AP_IOS_DEBUG_BIN="$bin/ap-ios-debug" XCRUN_BIN="$bin/xcrun" \
   "$subject" >"$guard/stdout" 2>"$guard/stderr"
-assert_eq "$(cat "$guard/stdout")" 'SKIP: device-smoke requires IOS_DEBUG_REAL_DEVICE_SMOKE=1'
+assert_eq "$(cat "$guard/stdout")" 'SKIP: device-smoke requires AP_IOS_DEBUG_REAL_DEVICE_SMOKE=1'
 [[ ! -e "$guard/events" ]] || fail 'opt-out invoked a dependency'
 
 for scenario in no_device multiple_devices device_untrusted device_locked; do

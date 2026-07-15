@@ -3,7 +3,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 validator="$root/scripts/validate-skill.sh"
-source_skill="$root/codex/skills/sx-ios-debug"
+source_skill="$root/codex/skills/ap-ios-debug-skill"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
@@ -51,8 +51,8 @@ mkdir "$tmp/fake-bin"
     "    printf '%s\\n' '{\"ok\":true}'" \
     '    ;;' \
     'esac'
-} >"$tmp/fake-bin/ios-debug"
-chmod +x "$tmp/fake-bin/ios-debug"
+} >"$tmp/fake-bin/ap-ios-debug"
+chmod +x "$tmp/fake-bin/ap-ios-debug"
 set +e
 PATH="$tmp/fake-bin:$PATH" ACTIVATION_MARKER="$tmp/activated" \
   "$tmp/example-1.sh" >"$tmp/example-1.out" 2>"$tmp/example-1.err"
@@ -85,7 +85,7 @@ make_failing_grep() {
   chmod +x "$path"
 }
 
-make_failing_grep "$tmp/grep-raw-error" 'ios-debug .*request (post|put|patch|delete)'
+make_failing_grep "$tmp/grep-raw-error" 'ap-ios-debug .*request (post|put|patch|delete)'
 run_expect_failure grep_raw_error env GREP_BIN="$tmp/grep-raw-error" SKILL_PATH="$source_skill" "$validator"
 grep -Fq 'grep failed (2)' "$tmp/grep_raw_error.out"
 
@@ -93,7 +93,7 @@ make_failing_grep "$tmp/grep-placeholder-error" '(TODO|PLACEHOLDER|\[TODO)'
 run_expect_failure grep_placeholder_error env GREP_BIN="$tmp/grep-placeholder-error" SKILL_PATH="$source_skill" "$validator"
 grep -Fq 'grep failed (2)' "$tmp/grep_placeholder_error.out"
 
-make_failing_grep "$tmp/grep-line-error" 'command -v ios-debug' '-nFm'
+make_failing_grep "$tmp/grep-line-error" 'command -v ap-ios-debug' '-nFm'
 run_expect_failure grep_line_error env GREP_BIN="$tmp/grep-line-error" SKILL_PATH="$source_skill" "$validator"
 grep -Fq 'grep failed (2)' "$tmp/grep_line_error.out"
 

@@ -1,15 +1,15 @@
 #if DEBUG
-import IOSDebugKit
+import APIOSDebugKit
 
 @MainActor
 final class DemoStateProvider: DebugStateProvider {
-    private let model: DebugDemoModel
+    private let model: APIOSDebugDemoModel
 
-    init(model: DebugDemoModel) {
+    init(model: APIOSDebugDemoModel) {
         self.model = model
     }
 
-    func snapshot() -> DebugDemoSnapshot {
+    func snapshot() -> APIOSDebugDemoSnapshot {
         model.snapshot
     }
 

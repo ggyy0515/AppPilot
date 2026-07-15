@@ -12,25 +12,25 @@
 			containerPortal = A20000000000000000000000 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A20000000000000000000001;
-			remoteInfo = DebugDemo;
+			remoteInfo = APIOSDebugDemo;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A30000000000000000000003 /* DebugDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DebugDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A30000000000000000000004 /* DebugDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DebugDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A30000000000000000000019 /* DebugDemoRelease.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DebugDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000003 /* APIOSDebugDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = APIOSDebugDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000004 /* APIOSDebugDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = APIOSDebugDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000019 /* APIOSDebugDemoRelease.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = APIOSDebugDemoRelease.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A30000000000000000000005 /* DebugDemo */ = {
+		A30000000000000000000005 /* APIOSDebugDemo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DebugDemo;
+			path = APIOSDebugDemo;
 			sourceTree = "<group>";
 		};
-		A30000000000000000000006 /* DebugDemoTests */ = {
+		A30000000000000000000006 /* APIOSDebugDemoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DebugDemoTests;
+			path = APIOSDebugDemoTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -63,8 +63,8 @@
 		A30000000000000000000009 = {
 			isa = PBXGroup;
 			children = (
-				A30000000000000000000005 /* DebugDemo */,
-				A30000000000000000000006 /* DebugDemoTests */,
+				A30000000000000000000005 /* APIOSDebugDemo */,
+				A30000000000000000000006 /* APIOSDebugDemoTests */,
 				A3000000000000000000000A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -72,9 +72,9 @@
 		A3000000000000000000000A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A30000000000000000000003 /* DebugDemo.app */,
-				A30000000000000000000019 /* DebugDemoRelease.app */,
-				A30000000000000000000004 /* DebugDemoTests.xctest */,
+				A30000000000000000000003 /* APIOSDebugDemo.app */,
+				A30000000000000000000019 /* APIOSDebugDemoRelease.app */,
+				A30000000000000000000004 /* APIOSDebugDemoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -82,9 +82,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A20000000000000000000001 /* DebugDemo */ = {
+		A20000000000000000000001 /* APIOSDebugDemo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A3000000000000000000000B /* Build configuration list for PBXNativeTarget "DebugDemo" */;
+			buildConfigurationList = A3000000000000000000000B /* Build configuration list for PBXNativeTarget "APIOSDebugDemo" */;
 			buildPhases = (
 				A3000000000000000000000C /* Sources */,
 				A30000000000000000000007 /* Frameworks */,
@@ -95,19 +95,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A30000000000000000000005 /* DebugDemo */,
+				A30000000000000000000005 /* APIOSDebugDemo */,
 			);
-			name = DebugDemo;
+			name = APIOSDebugDemo;
 			packageProductDependencies = (
-				A10000000000000000000002 /* IOSDebugKit */,
+				A10000000000000000000002 /* APIOSDebugKit */,
 			);
-			productName = DebugDemo;
-			productReference = A30000000000000000000003 /* DebugDemo.app */;
+			productName = APIOSDebugDemo;
+			productReference = A30000000000000000000003 /* APIOSDebugDemo.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A20000000000000000000002 /* DebugDemoTests */ = {
+		A20000000000000000000002 /* APIOSDebugDemoTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A3000000000000000000000E /* Build configuration list for PBXNativeTarget "DebugDemoTests" */;
+			buildConfigurationList = A3000000000000000000000E /* Build configuration list for PBXNativeTarget "APIOSDebugDemoTests" */;
 			buildPhases = (
 				A3000000000000000000000F /* Sources */,
 				A30000000000000000000008 /* Frameworks */,
@@ -119,18 +119,18 @@
 				A30000000000000000000011 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A30000000000000000000006 /* DebugDemoTests */,
+				A30000000000000000000006 /* APIOSDebugDemoTests */,
 			);
-			name = DebugDemoTests;
+			name = APIOSDebugDemoTests;
 			packageProductDependencies = (
 			);
-			productName = DebugDemoTests;
-			productReference = A30000000000000000000004 /* DebugDemoTests.xctest */;
+			productName = APIOSDebugDemoTests;
+			productReference = A30000000000000000000004 /* APIOSDebugDemoTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		A20000000000000000000003 /* DebugDemoRelease */ = {
+		A20000000000000000000003 /* APIOSDebugDemoRelease */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A3000000000000000000001F /* Build configuration list for PBXNativeTarget "DebugDemoRelease" */;
+			buildConfigurationList = A3000000000000000000001F /* Build configuration list for PBXNativeTarget "APIOSDebugDemoRelease" */;
 			buildPhases = (
 				A3000000000000000000001A /* Sources */,
 				A3000000000000000000001B /* Frameworks */,
@@ -141,13 +141,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A30000000000000000000005 /* DebugDemo */,
+				A30000000000000000000005 /* APIOSDebugDemo */,
 			);
-			name = DebugDemoRelease;
+			name = APIOSDebugDemoRelease;
 			packageProductDependencies = (
 			);
-			productName = DebugDemo;
-			productReference = A30000000000000000000019 /* DebugDemoRelease.app */;
+			productName = APIOSDebugDemoRelease;
+			productReference = A30000000000000000000019 /* APIOSDebugDemoRelease.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -169,7 +169,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A30000000000000000000012 /* Build configuration list for PBXProject "DebugDemo" */;
+			buildConfigurationList = A30000000000000000000012 /* Build configuration list for PBXProject "APIOSDebugDemo" */;
 			compatibilityVersion = "Xcode 16.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -180,16 +180,16 @@
 			mainGroup = A30000000000000000000009;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A10000000000000000000001 /* XCLocalSwiftPackageReference "../../swift/IOSDebugKit" */,
+				A10000000000000000000001 /* XCLocalSwiftPackageReference "../../swift/ap-ios-debug-kit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A3000000000000000000000A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A20000000000000000000001 /* DebugDemo */,
-				A20000000000000000000002 /* DebugDemoTests */,
-				A20000000000000000000003 /* DebugDemoRelease */,
+				A20000000000000000000001 /* APIOSDebugDemo */,
+				A20000000000000000000002 /* APIOSDebugDemoTests */,
+				A20000000000000000000003 /* APIOSDebugDemoRelease */,
 			);
 		};
 /* End PBXProject section */
@@ -207,7 +207,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A30000000000000000000011 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = A20000000000000000000001 /* DebugDemo */; targetProxy = A30000000000000000000002 /* PBXContainerItemProxy */; };
+		A30000000000000000000011 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = A20000000000000000000001 /* APIOSDebugDemo */; targetProxy = A30000000000000000000002 /* PBXContainerItemProxy */; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -255,7 +255,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.iosdebug.DebugDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -269,7 +269,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.iosdebug.DebugDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -284,11 +284,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.iosdebug.DebugDemoTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DebugDemo.app/DebugDemo";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/APIOSDebugDemo.app/APIOSDebugDemo";
 			};
 			name = Debug;
 		};
@@ -299,11 +299,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.iosdebug.DebugDemoTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DebugDemo.app/DebugDemo";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/APIOSDebugDemo.app/APIOSDebugDemo";
 			};
 			name = Release;
 		};
@@ -313,8 +313,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.iosdebug.DebugDemo;
-				PRODUCT_NAME = DebugDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
+				PRODUCT_NAME = APIOSDebugDemoRelease;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -328,8 +328,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.iosdebug.DebugDemo;
-				PRODUCT_NAME = DebugDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
+				PRODUCT_NAME = APIOSDebugDemoRelease;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -339,24 +339,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A3000000000000000000000B /* Build configuration list for PBXNativeTarget "DebugDemo" */ = {isa = XCConfigurationList; buildConfigurations = (A30000000000000000000015 /* Debug */, A30000000000000000000016 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		A3000000000000000000000E /* Build configuration list for PBXNativeTarget "DebugDemoTests" */ = {isa = XCConfigurationList; buildConfigurations = (A30000000000000000000017 /* Debug */, A30000000000000000000018 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		A3000000000000000000001F /* Build configuration list for PBXNativeTarget "DebugDemoRelease" */ = {isa = XCConfigurationList; buildConfigurations = (A3000000000000000000001D /* Debug */, A3000000000000000000001E /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		A30000000000000000000012 /* Build configuration list for PBXProject "DebugDemo" */ = {isa = XCConfigurationList; buildConfigurations = (A30000000000000000000013 /* Debug */, A30000000000000000000014 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A3000000000000000000000B /* Build configuration list for PBXNativeTarget "APIOSDebugDemo" */ = {isa = XCConfigurationList; buildConfigurations = (A30000000000000000000015 /* Debug */, A30000000000000000000016 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A3000000000000000000000E /* Build configuration list for PBXNativeTarget "APIOSDebugDemoTests" */ = {isa = XCConfigurationList; buildConfigurations = (A30000000000000000000017 /* Debug */, A30000000000000000000018 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A3000000000000000000001F /* Build configuration list for PBXNativeTarget "APIOSDebugDemoRelease" */ = {isa = XCConfigurationList; buildConfigurations = (A3000000000000000000001D /* Debug */, A3000000000000000000001E /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A30000000000000000000012 /* Build configuration list for PBXProject "APIOSDebugDemo" */ = {isa = XCConfigurationList; buildConfigurations = (A30000000000000000000013 /* Debug */, A30000000000000000000014 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A10000000000000000000001 /* XCLocalSwiftPackageReference "../../swift/IOSDebugKit" */ = {
+		A10000000000000000000001 /* XCLocalSwiftPackageReference "../../swift/ap-ios-debug-kit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../swift/IOSDebugKit;
+			relativePath = ../../swift/ap-ios-debug-kit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A10000000000000000000002 /* IOSDebugKit */ = {
+		A10000000000000000000002 /* APIOSDebugKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A10000000000000000000001 /* XCLocalSwiftPackageReference "../../swift/IOSDebugKit" */;
-			productName = IOSDebugKit;
+			package = A10000000000000000000001 /* XCLocalSwiftPackageReference "../../swift/ap-ios-debug-kit" */;
+			productName = APIOSDebugKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

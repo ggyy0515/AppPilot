@@ -90,7 +90,7 @@ scan_artifacts() {
   local objects="$3"
   local workspace="$4"
   local index=0 input stripped strings_output nm_output symbols_output line status
-  local runtime_pattern='IOSDebugRuntime|DebugActionRegistry|RecordingController|ScreenshotCapture|HTTPRouter|NetworkDebugServer|iosDebugAction'
+  local runtime_pattern='APIOSDebugRuntime|DebugActionRegistry|RecordingController|ScreenshotCapture|HTTPRouter|NetworkDebugServer|iosDebugAction'
   local route_pattern='/v1/(actions|screenshot|recording)'
   local network_pattern='NWListener|NetworkDebugServer'
 
@@ -129,7 +129,7 @@ scan_artifacts() {
     status=0
     pattern_status "$runtime_pattern" "$workspace/all.symbols" "$workspace/positive-symbol.match" || status=$?
     if [ "$status" -ne 0 ]; then
-      echo "FAIL: Debug positive control did not contain an IOSDebugKit runtime symbol" >&2
+      echo "FAIL: Debug positive control did not contain an APIOSDebugKit runtime symbol" >&2
       return 1
     fi
     return 0
@@ -139,9 +139,9 @@ scan_artifacts() {
   local files=("$workspace/all.strings" "$workspace/all.strings" "$workspace/all.strings" "$workspace/all.symbols")
   local messages=(
     'Release artifact contains a forbidden route'
-    'Release artifact contains an IOSDebugKit runtime type string'
+    'Release artifact contains an APIOSDebugKit runtime type string'
     'Release artifact contains a Network listener marker'
-    'Release artifact contains an IOSDebugKit runtime symbol'
+    'Release artifact contains an APIOSDebugKit runtime symbol'
   )
   for index in 0 1 2 3; do
     local pattern="${patterns[$index]}"
@@ -158,28 +158,28 @@ scan_artifacts() {
   done
 }
 
-if [ "${IOS_DEBUG_RELEASE_SCAN_LIBRARY_ONLY:-0}" = 1 ]; then
+if [ "${AP_IOS_DEBUG_RELEASE_SCAN_LIBRARY_ONLY:-0}" = 1 ]; then
   return 0 2>/dev/null || exit 0
 fi
 
 # Runtime orchestration is intentionally below the library guard so fixture
 # tests exercise the exact scanner without requiring Xcode or a simulator.
-binary="${IOS_DEBUG_BIN:-$root/build/ios-debug}"
+binary="${AP_IOS_DEBUG_BIN:-$root/build/ap-ios-debug}"
 derived="${DERIVED_DATA:-$root/build/DerivedData-release-scan}"
-tmp="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-release.XXXXXX")"
-bundle_id="com.openai.iosdebug.DebugDemo"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-release.XXXXXX")"
+bundle_id="com.openai.ap-ios-debug-demo"
 udid=""
-token="${IOS_DEBUG_RELEASE_TOKEN:-$(uuidgen | tr '[:upper:]' '[:lower:]')}"
-port="${IOS_DEBUG_RELEASE_PORT:-9876}"
-release_scheme="${IOS_DEBUG_RELEASE_SCHEME:-DebugDemo-Release}"
+token="${AP_IOS_DEBUG_RELEASE_TOKEN:-$(uuidgen | tr '[:upper:]' '[:lower:]')}"
+port="${AP_IOS_DEBUG_RELEASE_PORT:-9876}"
+release_scheme="${AP_IOS_DEBUG_RELEASE_SCHEME:-ap-ios-debug-demo-release}"
 failure_stage="initialize Release scan"
 failure_capture=""
 
 redact_stream() {
-  IOS_DEBUG_REDACT_TOKEN="$token" perl -pe '
-    s/\Q$ENV{IOS_DEBUG_REDACT_TOKEN}\E/<redacted>/g if length($ENV{IOS_DEBUG_REDACT_TOKEN} // "");
+  AP_IOS_DEBUG_REDACT_TOKEN="$token" perl -pe '
+    s/\Q$ENV{AP_IOS_DEBUG_REDACT_TOKEN}\E/<redacted>/g if length($ENV{AP_IOS_DEBUG_REDACT_TOKEN} // "");
     s/(Authorization\s*:\s*Bearer\s+)\S+/${1}<redacted>/ig;
-    s/(IOS_DEBUG_TOKEN\s*[=:]\s*)\S+/${1}<redacted>/ig;
+    s/(AP_IOS_DEBUG_TOKEN\s*[=:]\s*)\S+/${1}<redacted>/ig;
   '
 }
 
@@ -221,12 +221,12 @@ run_stage() {
 }
 
 probe_debug_until_ready() {
-  local attempts="${IOS_DEBUG_RELEASE_RETRIES:-30}"
-  local delay="${IOS_DEBUG_RELEASE_RETRY_DELAY:-0.25}"
+  local attempts="${AP_IOS_DEBUG_RELEASE_RETRIES:-30}"
+  local delay="${AP_IOS_DEBUG_RELEASE_RETRY_DELAY:-0.25}"
   local attempt status match
   for ((attempt = 1; attempt <= attempts; attempt++)); do
     status=0
-    env IOS_DEBUG_TOKEN="$token" "$binary" --json --transport tcp --tcp-host 127.0.0.1 \
+    env AP_IOS_DEBUG_TOKEN="$token" "$binary" --json --transport tcp --tcp-host 127.0.0.1 \
       --port "$port" --device "$udid" app probe \
       >"$tmp/probe-debug.json" 2>"$tmp/probe-debug.json.stderr" || status=$?
     if [ "$status" -eq 0 ]; then
@@ -250,29 +250,29 @@ case "$port_status" in
   *) echo "FAIL: port-check producer failed with exit $port_status" >&2; exit "$port_status" ;;
 esac
 
-run_stage "locate ios-debug CLI" "$tmp/cli-check.txt" test -x "$binary"
+run_stage "locate ap-ios-debug CLI" "$tmp/cli-check.txt" test -x "$binary"
 
 debug_derived="$derived/Debug"
 release_derived="$derived/Release"
 run_stage "build Debug positive control" "$tmp/xcodebuild-debug.log" \
-  "$XCODEBUILD_BIN" -project "$root/Examples/DebugDemo/DebugDemo.xcodeproj" \
-  -scheme DebugDemo -configuration Debug -sdk iphonesimulator \
+  "$XCODEBUILD_BIN" -project "$root/Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj" \
+  -scheme ap-ios-debug-demo -configuration Debug -sdk iphonesimulator \
   -derivedDataPath "$debug_derived" CODE_SIGNING_ALLOWED=NO build
-debug_app="$debug_derived/Build/Products/Debug-iphonesimulator/DebugDemo.app"
+debug_app="$debug_derived/Build/Products/Debug-iphonesimulator/APIOSDebugDemo.app"
 failure_stage="scan Debug positive control"
 failure_capture="$tmp/debug-scan"
-scan_artifacts positive "$debug_app" "$debug_derived/Build/Intermediates.noindex/DebugDemo.build" "$tmp/debug-scan"
+scan_artifacts positive "$debug_app" "$debug_derived/Build/Intermediates.noindex/APIOSDebugDemo.build" "$tmp/debug-scan"
 
 run_stage "build Release exclusion control" "$tmp/xcodebuild-release.log" \
   "$MAKE_BIN" -C "$root" demo-release \
   XCODEBUILD="$XCODEBUILD_BIN" DEMO_RELEASE_SCHEME="$release_scheme" DERIVED_DATA="$release_derived"
-release_app="$release_derived/Build/Products/Release-iphonesimulator/DebugDemo.app"
+release_app="$release_derived/Build/Products/Release-iphonesimulator/APIOSDebugDemoRelease.app"
 failure_stage="scan Release artifacts"
 failure_capture="$tmp/release-scan"
 # Scan App-owned objects as well as every Mach-O shipped in the bundle. SwiftPM
-# may compile IOSDebugCore package artifacts while resolving the graph; those
+# may compile APIOSDebugCore package artifacts while resolving the graph; those
 # are not App artifacts unless they are present in the final bundle/link image.
-scan_artifacts negative "$release_app" "$release_derived/Build/Intermediates.noindex/DebugDemoRelease.build" "$tmp/release-scan"
+scan_artifacts negative "$release_app" "$release_derived/Build/Intermediates.noindex/APIOSDebugDemoRelease.build" "$tmp/release-scan"
 
 run_stage "list available simulators" "$tmp/simulators.json" \
   "$XCRUN_BIN" simctl list devices available -j
@@ -290,7 +290,7 @@ run_stage "wait for simulator boot" "$tmp/bootstatus.txt" "$XCRUN_BIN" simctl bo
 run_stage "install Debug positive control" "$tmp/install-debug.txt" \
   "$XCRUN_BIN" simctl install "$udid" "$debug_app"
 run_stage "launch Debug positive control" "$tmp/launch-debug.txt" env \
-  SIMCTL_CHILD_IOS_DEBUG_PORT="$port" SIMCTL_CHILD_IOS_DEBUG_TOKEN="$token" \
+  SIMCTL_CHILD_AP_IOS_DEBUG_PORT="$port" SIMCTL_CHILD_AP_IOS_DEBUG_TOKEN="$token" \
   "$XCRUN_BIN" simctl launch --terminate-running-process "$udid" "$bundle_id"
 failure_stage="probe Debug positive control"
 failure_capture="$tmp/probe-debug.json"
@@ -301,13 +301,13 @@ run_stage "terminate Debug positive control" "$tmp/terminate-debug.txt" \
 run_stage "install Release exclusion control" "$tmp/install-release.txt" \
   "$XCRUN_BIN" simctl install "$udid" "$release_app"
 run_stage "launch Release exclusion control" "$tmp/launch-release.txt" env \
-  SIMCTL_CHILD_IOS_DEBUG_PORT="$port" SIMCTL_CHILD_IOS_DEBUG_TOKEN="$token" \
+  SIMCTL_CHILD_AP_IOS_DEBUG_PORT="$port" SIMCTL_CHILD_AP_IOS_DEBUG_TOKEN="$token" \
   "$XCRUN_BIN" simctl launch --terminate-running-process "$udid" "$bundle_id"
 
 failure_stage="prove Release app has no debug listener"
 failure_capture="$tmp/probe-release.json"
 release_probe_status=0
-env IOS_DEBUG_TOKEN="$token" "$binary" --json --transport tcp --tcp-host 127.0.0.1 \
+env AP_IOS_DEBUG_TOKEN="$token" "$binary" --json --transport tcp --tcp-host 127.0.0.1 \
   --port "$port" --device "$udid" app probe \
   >"$tmp/probe-release.json" 2>"$tmp/probe-release.json.stderr" || release_probe_status=$?
 if [ "$release_probe_status" -ne 4 ]; then

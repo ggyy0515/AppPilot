@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-work="$(mktemp -d "${TMPDIR:-/tmp}/ios-debug-release-runtime.XXXXXX")"
+work="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-release-runtime.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/tools" "$work/derived data"
 log="$work/calls.log"
@@ -41,9 +41,9 @@ EOF
 cat >"$work/tools/xcodebuild" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-printf 'xcodebuild %s token=%s\n' "$*" "${IOS_DEBUG_RELEASE_TOKEN:-}" >>"$FAKE_LOG"
+printf 'xcodebuild %s token=%s\n' "$*" "${AP_IOS_DEBUG_RELEASE_TOKEN:-}" >>"$FAKE_LOG"
 if [ "${FAKE_XCODE_FAIL:-0}" = 1 ]; then
-  printf 'build failed token=%s\n' "${IOS_DEBUG_RELEASE_TOKEN:-}" >&2
+  printf 'build failed token=%s\n' "${AP_IOS_DEBUG_RELEASE_TOKEN:-}" >&2
   exit 65
 fi
 configuration=''
@@ -55,14 +55,20 @@ while [ "$#" -gt 0 ]; do
     *) shift ;;
   esac
 done
-app="$derived/Build/Products/${configuration}-iphonesimulator/DebugDemo.app"
-if [ "$configuration" = Release ]; then target=DebugDemoRelease; else target=DebugDemo; fi
+if [ "$configuration" = Release ]; then
+  target=APIOSDebugDemoRelease
+  product=APIOSDebugDemoRelease
+else
+  target=APIOSDebugDemo
+  product=APIOSDebugDemo
+fi
+app="$derived/Build/Products/${configuration}-iphonesimulator/$product.app"
 objects="$derived/Build/Intermediates.noindex/$target.build"
 mkdir -p "$app/Frameworks/F.framework" "$objects"
-printf 'ordinary main\n' >"$app/DebugDemo"
+printf 'ordinary main\n' >"$app/$product"
 printf 'ordinary framework\n' >"$app/Frameworks/F.framework/F"
 if [ "$configuration" = Debug ]; then
-  printf 'STRING:/v1/actions\nSYMBOL:IOSDebugRuntime\n' >"$app/DebugDemo.debug.dylib"
+  printf 'STRING:/v1/actions\nSYMBOL:APIOSDebugRuntime\n' >"$app/$product.debug.dylib"
   printf 'SYMBOL:DebugActionRegistry\n' >"$objects/runtime.o"
 else
   printf 'ordinary release object\n' >"$objects/app.o"
@@ -71,7 +77,7 @@ EOF
 cat >"$work/tools/xcrun" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-printf 'xcrun %s port=%s token=%s\n' "$*" "${SIMCTL_CHILD_IOS_DEBUG_PORT:-}" "${SIMCTL_CHILD_IOS_DEBUG_TOKEN:-}" >>"$FAKE_LOG"
+printf 'xcrun %s port=%s token=%s\n' "$*" "${SIMCTL_CHILD_AP_IOS_DEBUG_PORT:-}" "${SIMCTL_CHILD_AP_IOS_DEBUG_TOKEN:-}" >>"$FAKE_LOG"
 shift # simctl
 case "$1" in
   list) printf '{"devices":{}}\n' ;;
@@ -81,10 +87,10 @@ case "$1" in
   *) ;;
 esac
 EOF
-cat >"$work/tools/ios-debug" <<'EOF'
+cat >"$work/tools/ap-ios-debug" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-printf 'cli %s port=%s token=%s state=%s\n' "$*" "${IOS_DEBUG_RELEASE_PORT:-}" "${IOS_DEBUG_TOKEN:-}" "$(cat "$FAKE_STATE" 2>/dev/null || true)" >>"$FAKE_LOG"
+printf 'cli %s port=%s token=%s state=%s\n' "$*" "${AP_IOS_DEBUG_RELEASE_PORT:-}" "${AP_IOS_DEBUG_TOKEN:-}" "$(cat "$FAKE_STATE" 2>/dev/null || true)" >>"$FAKE_LOG"
 if [ "$(cat "$FAKE_STATE")" = Debug ]; then
   count_file="$FAKE_STATE.count"
   count=0; [ ! -f "$count_file" ] || count="$(cat "$count_file")"
@@ -106,9 +112,9 @@ common_env=(
   DEMANGLE_BIN="$work/tools/demangle" LSOF_BIN="$work/tools/lsof"
   XCODEBUILD_BIN="$work/tools/xcodebuild" XCRUN_BIN="$work/tools/xcrun"
   SELECT_SIMULATOR_BIN="$work/tools/select-simulator"
-  IOS_DEBUG_BIN="$work/tools/ios-debug" DERIVED_DATA="$work/derived data"
-  IOS_DEBUG_RELEASE_TOKEN="$token" IOS_DEBUG_RELEASE_PORT=19876
-  IOS_DEBUG_RELEASE_RETRIES=3 IOS_DEBUG_RELEASE_RETRY_DELAY=0
+  AP_IOS_DEBUG_BIN="$work/tools/ap-ios-debug" DERIVED_DATA="$work/derived data"
+  AP_IOS_DEBUG_RELEASE_TOKEN="$token" AP_IOS_DEBUG_RELEASE_PORT=19876
+  AP_IOS_DEBUG_RELEASE_RETRIES=3 AP_IOS_DEBUG_RELEASE_RETRY_DELAY=0
 )
 
 output="$(env "${common_env[@]}" "$root/scripts/release-scan.sh")"
@@ -119,7 +125,7 @@ grep -Fq -- '-configuration Release' "$log"
 test "$(grep -c '^cli ' "$log")" -eq 3
 test "$(grep '^cli ' "$log" | sed -n '1p' | grep -c 'port=19876')" -eq 1
 test "$(grep '^cli ' "$log" | sed -n '3p' | grep -c 'port=19876')" -eq 1
-grep -Fq 'launch --terminate-running-process SIM-UDID com.openai.iosdebug.DebugDemo port=19876' "$log"
+grep -Fq 'launch --terminate-running-process SIM-UDID com.openai.ap-ios-debug-demo port=19876' "$log"
 
 set +e
 occupied="$(env "${common_env[@]}" FAKE_LSOF_STATUS=0 "$root/scripts/release-scan.sh" 2>&1)"

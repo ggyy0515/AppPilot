@@ -1,10 +1,10 @@
 import SwiftUI
 #if DEBUG
-import IOSDebugKit
+import APIOSDebugKit
 #endif
 
 struct ContentView: View {
-    @ObservedObject var model: DebugDemoModel
+    @ObservedObject var model: APIOSDebugDemoModel
 
     var body: some View {
         NavigationStack {

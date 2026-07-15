@@ -1,0 +1,2 @@
+port = 9876
+output_dir = ".ap-ios-debug/artifacts"
