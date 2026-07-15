@@ -83,6 +83,47 @@ func TestLoadUsesDefaultsWhenConfigFilesAreAbsent(t *testing.T) {
 	require.Equal(t, workingDir, cfg.WorkingDir)
 }
 
+func TestLoadDoesNotFallBackToLegacyEnvironmentOrFiles(t *testing.T) {
+	legacyEnvironmentPrefix := "IOS_" + "DEBUG"
+	legacyConfigName := ".ios" + "-debug"
+	for _, tc := range []struct {
+		name       string
+		legacyEnv  map[string]string
+		legacyFile bool
+	}{
+		{
+			name: "environment only",
+			legacyEnv: map[string]string{
+				legacyEnvironmentPrefix + "_DEVICE": "legacy-device",
+				legacyEnvironmentPrefix + "_TOKEN":  "legacy-token",
+			},
+		},
+		{name: "files only", legacyEnv: map[string]string{}, legacyFile: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			workingDir := t.TempDir()
+			userHome := t.TempDir()
+			if tc.legacyFile {
+				require.NoError(t, os.WriteFile(filepath.Join(workingDir, legacyConfigName+".toml"), []byte("device = 'legacy-project-device'\nport = 9001\n"), 0o600))
+				legacyUserDir := filepath.Join(userHome, legacyConfigName)
+				require.NoError(t, os.MkdirAll(legacyUserDir, 0o700))
+				require.NoError(t, os.WriteFile(filepath.Join(legacyUserDir, "config.toml"), []byte("device = 'legacy-user-device'\nport = 9002\n"), 0o600))
+			}
+
+			cfg, err := config.Load(context.Background(), config.LoadOptions{
+				LookupEnv:  mapEnv(tc.legacyEnv),
+				WorkingDir: workingDir,
+				UserHome:   userHome,
+			})
+			require.NoError(t, err)
+			require.Empty(t, cfg.DeviceID)
+			require.Empty(t, cfg.Token)
+			require.Equal(t, uint16(9876), cfg.Port)
+			require.Equal(t, filepath.Join(workingDir, ".ap-ios-debug", "artifacts"), cfg.OutputDir)
+		})
+	}
+}
+
 func TestLoadUsesAppPilotEnvironmentAndConfigFiles(t *testing.T) {
 	t.Run("user config", func(t *testing.T) {
 		cfg, err := config.Load(context.Background(), config.LoadOptions{

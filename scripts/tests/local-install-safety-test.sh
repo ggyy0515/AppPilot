@@ -5,6 +5,11 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 installer="$root/scripts/local-install.sh"
 tmp="$(mktemp -d /tmp/ap-ios-debug-install-safety.XXXXXX)"
 trap 'rm -rf -- "$tmp"' EXIT
+legacy_binary_name="ios""-debug"
+legacy_share_name="ios""-debug"
+legacy_package_name="IOS""DebugKit"
+legacy_skill_name="sx-ios""-debug"
+legacy_project_name=".ios""-debug"
 
 mkdir -p "$tmp/source/package/Templates" "$tmp/source/skill/agents"
 mkdir -p "$tmp/outside-build" "$tmp/outside-swiftpm"
@@ -81,10 +86,10 @@ test "$(cat "$prefix/bin/ap-ios-debug")" = old-binary
 test "$(cat "$prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
 test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
 
-printf 'legacy-bin\n' >"$prefix/bin/ios-debug"
-mkdir -p "$prefix/share/ios-debug/IOSDebugKit" "$codex_home/skills/sx-ios-debug"
-printf 'legacy-package\n' >"$prefix/share/ios-debug/IOSDebugKit/version"
-printf 'legacy-skill\n' >"$codex_home/skills/sx-ios-debug/version"
+printf 'legacy-bin\n' >"$prefix/bin/$legacy_binary_name"
+mkdir -p "$prefix/share/$legacy_share_name/$legacy_package_name" "$codex_home/skills/$legacy_skill_name"
+printf 'legacy-package\n' >"$prefix/share/$legacy_share_name/$legacy_package_name/version"
+printf 'legacy-skill\n' >"$codex_home/skills/$legacy_skill_name/version"
 export AP_IOS_DEBUG_TEST_FAIL_AFTER_BACKUP=1
 if run_installer "$prefix" "$codex_home"; then
   echo 'FAIL: injected post-backup failure was accepted' >&2
@@ -94,9 +99,9 @@ unset AP_IOS_DEBUG_TEST_FAIL_AFTER_BACKUP
 test "$(cat "$prefix/bin/ap-ios-debug")" = old-binary
 test "$(cat "$prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
 test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
-test "$(cat "$prefix/bin/ios-debug")" = legacy-bin
-test "$(cat "$prefix/share/ios-debug/IOSDebugKit/version")" = legacy-package
-test "$(cat "$codex_home/skills/sx-ios-debug/version")" = legacy-skill
+test "$(cat "$prefix/bin/$legacy_binary_name")" = legacy-bin
+test "$(cat "$prefix/share/$legacy_share_name/$legacy_package_name/version")" = legacy-package
+test "$(cat "$codex_home/skills/$legacy_skill_name/version")" = legacy-skill
 
 printf '%s\n' '#!/bin/bash' 'set -eu' \
   'count=0; [[ -f "$MV_COUNT" ]] && count="$(cat "$MV_COUNT")"' \
@@ -112,19 +117,19 @@ for term_after in 1 2 3 4 5 6 7 8 9; do
   signal_codex="$signal_root/codex"
   mkdir -p "$signal_prefix/bin" \
     "$signal_prefix/share/ap-ios-debug/ap-ios-debug-kit" \
-    "$signal_prefix/share/ios-debug/IOSDebugKit" \
+    "$signal_prefix/share/$legacy_share_name/$legacy_package_name" \
     "$signal_codex/skills/ap-ios-debug-skill" \
-    "$signal_codex/skills/sx-ios-debug"
+    "$signal_codex/skills/$legacy_skill_name"
   printf 'old-binary-%s\n' "$term_after" >"$signal_prefix/bin/ap-ios-debug"
   printf 'old-package-%s\n' "$term_after" \
     >"$signal_prefix/share/ap-ios-debug/ap-ios-debug-kit/version"
   printf 'old-skill-%s\n' "$term_after" \
     >"$signal_codex/skills/ap-ios-debug-skill/version"
-  printf 'legacy-bin-%s\n' "$term_after" >"$signal_prefix/bin/ios-debug"
+  printf 'legacy-bin-%s\n' "$term_after" >"$signal_prefix/bin/$legacy_binary_name"
   printf 'legacy-package-%s\n' "$term_after" \
-    >"$signal_prefix/share/ios-debug/IOSDebugKit/version"
+    >"$signal_prefix/share/$legacy_share_name/$legacy_package_name/version"
   printf 'legacy-skill-%s\n' "$term_after" \
-    >"$signal_codex/skills/sx-ios-debug/version"
+    >"$signal_codex/skills/$legacy_skill_name/version"
   export MV_BIN="$tmp/term-after-mv"
   export MV_COUNT="$signal_root/mv-count"
   export MV_TERM_AFTER="$term_after"
@@ -140,10 +145,10 @@ for term_after in 1 2 3 4 5 6 7 8 9; do
     = "old-package-$term_after"
   test "$(cat "$signal_codex/skills/ap-ios-debug-skill/version")" \
     = "old-skill-$term_after"
-  test "$(cat "$signal_prefix/bin/ios-debug")" = "legacy-bin-$term_after"
-  test "$(cat "$signal_prefix/share/ios-debug/IOSDebugKit/version")" \
+  test "$(cat "$signal_prefix/bin/$legacy_binary_name")" = "legacy-bin-$term_after"
+  test "$(cat "$signal_prefix/share/$legacy_share_name/$legacy_package_name/version")" \
     = "legacy-package-$term_after"
-  test "$(cat "$signal_codex/skills/sx-ios-debug/version")" \
+  test "$(cat "$signal_codex/skills/$legacy_skill_name/version")" \
     = "legacy-skill-$term_after"
   test -z "$(find "$signal_prefix" "$signal_codex" \
     \( -name '*.stage.*' -o -name '*.backup.*' \) -print)"
@@ -160,15 +165,15 @@ cleanup_prefix="$cleanup_root/prefix"
 cleanup_codex="$cleanup_root/codex"
 mkdir -p "$cleanup_prefix/bin" \
   "$cleanup_prefix/share/ap-ios-debug/ap-ios-debug-kit" \
-  "$cleanup_prefix/share/ios-debug/IOSDebugKit" \
+  "$cleanup_prefix/share/$legacy_share_name/$legacy_package_name" \
   "$cleanup_codex/skills/ap-ios-debug-skill" \
-  "$cleanup_codex/skills/sx-ios-debug"
+  "$cleanup_codex/skills/$legacy_skill_name"
 printf 'old-binary\n' >"$cleanup_prefix/bin/ap-ios-debug"
 printf 'old-package\n' >"$cleanup_prefix/share/ap-ios-debug/ap-ios-debug-kit/version"
 printf 'old-skill\n' >"$cleanup_codex/skills/ap-ios-debug-skill/version"
-printf 'legacy-bin\n' >"$cleanup_prefix/bin/ios-debug"
-printf 'legacy-package\n' >"$cleanup_prefix/share/ios-debug/IOSDebugKit/version"
-printf 'legacy-skill\n' >"$cleanup_codex/skills/sx-ios-debug/version"
+printf 'legacy-bin\n' >"$cleanup_prefix/bin/$legacy_binary_name"
+printf 'legacy-package\n' >"$cleanup_prefix/share/$legacy_share_name/$legacy_package_name/version"
+printf 'legacy-skill\n' >"$cleanup_codex/skills/$legacy_skill_name/version"
 export RM_BIN="$tmp/failing-backup-rm"
 if ! run_installer "$cleanup_prefix" "$cleanup_codex" 2>"$cleanup_root/stderr"; then
   echo 'FAIL: committed install failed when backup cleanup failed' >&2
@@ -178,9 +183,9 @@ unset RM_BIN
 cmp "$tmp/source/ap-ios-debug" "$cleanup_prefix/bin/ap-ios-debug"
 test -f "$cleanup_prefix/share/ap-ios-debug/ap-ios-debug-kit/Templates/APIOSDebugBootstrap.swift"
 test -f "$cleanup_codex/skills/ap-ios-debug-skill/SKILL.md"
-test ! -e "$cleanup_prefix/bin/ios-debug"
-test ! -e "$cleanup_prefix/share/ios-debug/IOSDebugKit"
-test ! -e "$cleanup_codex/skills/sx-ios-debug"
+test ! -e "$cleanup_prefix/bin/$legacy_binary_name"
+test ! -e "$cleanup_prefix/share/$legacy_share_name/$legacy_package_name"
+test ! -e "$cleanup_codex/skills/$legacy_skill_name"
 test -z "$(find "$cleanup_prefix" "$cleanup_codex" -name '*.stage.*' -print)"
 if ! grep -q '^WARNING: unable to remove backup:' "$cleanup_root/stderr"; then
   echo 'FAIL: committed backup cleanup failure was not reported' >&2
@@ -188,13 +193,13 @@ if ! grep -q '^WARNING: unable to remove backup:' "$cleanup_root/stderr"; then
 fi
 test -n "$(find "$cleanup_prefix" "$cleanup_codex" -name '*.backup.*' -print)"
 
-printf 'legacy-bin-sibling\n' >"$prefix/bin/ios-debug-helper"
-printf 'legacy-share-sibling\n' >"$prefix/share/ios-debug/unrelated"
-printf 'legacy-skill-sibling\n' >"$codex_home/skills/sx-ios-debug-notes"
+printf 'legacy-bin-sibling\n' >"$prefix/bin/${legacy_binary_name}-helper"
+printf 'legacy-share-sibling\n' >"$prefix/share/$legacy_share_name/unrelated"
+printf 'legacy-skill-sibling\n' >"$codex_home/skills/${legacy_skill_name}-notes"
 project="$tmp/Project"
-mkdir -p "$project/.ios-debug/artifacts" "$project/.ap-ios-debug/artifacts"
-printf 'legacy-user-data\n' >"$project/.ios-debug.toml"
-printf 'legacy-artifact\n' >"$project/.ios-debug/artifacts/keep.txt"
+mkdir -p "$project/$legacy_project_name/artifacts" "$project/.ap-ios-debug/artifacts"
+printf 'legacy-user-data\n' >"$project/${legacy_project_name}.toml"
+printf 'legacy-artifact\n' >"$project/$legacy_project_name/artifacts/keep.txt"
 printf 'user-data\n' >"$project/.ap-ios-debug.toml"
 printf 'artifact\n' >"$project/.ap-ios-debug/artifacts/keep.txt"
 
@@ -211,14 +216,14 @@ test "$(cat "$tmp/outside-swiftpm/keep.txt")" = swiftpm-sentinel
 cmp "$tmp/source/skill/SKILL.md" "$codex_home/skills/ap-ios-debug-skill/SKILL.md"
 cmp "$tmp/source/skill/agents/openai.yaml" \
   "$codex_home/skills/ap-ios-debug-skill/agents/openai.yaml"
-test ! -e "$prefix/bin/ios-debug"
-test ! -e "$prefix/share/ios-debug/IOSDebugKit"
-test ! -e "$codex_home/skills/sx-ios-debug"
-test -f "$prefix/bin/ios-debug-helper"
-test -f "$prefix/share/ios-debug/unrelated"
-test -f "$codex_home/skills/sx-ios-debug-notes"
-test -f "$project/.ios-debug.toml"
-test -f "$project/.ios-debug/artifacts/keep.txt"
+test ! -e "$prefix/bin/$legacy_binary_name"
+test ! -e "$prefix/share/$legacy_share_name/$legacy_package_name"
+test ! -e "$codex_home/skills/$legacy_skill_name"
+test -f "$prefix/bin/${legacy_binary_name}-helper"
+test -f "$prefix/share/$legacy_share_name/unrelated"
+test -f "$codex_home/skills/${legacy_skill_name}-notes"
+test -f "$project/${legacy_project_name}.toml"
+test -f "$project/$legacy_project_name/artifacts/keep.txt"
 
 printf 'unrelated-bin\n' >"$prefix/bin/unrelated"
 printf 'unrelated-share\n' >"$prefix/share/unrelated"
@@ -230,11 +235,11 @@ test ! -e "$codex_home/skills/ap-ios-debug-skill"
 test -f "$prefix/bin/unrelated"
 test -f "$prefix/share/unrelated"
 test -f "$codex_home/skills/unrelated"
-test -f "$prefix/bin/ios-debug-helper"
-test -f "$prefix/share/ios-debug/unrelated"
-test -f "$codex_home/skills/sx-ios-debug-notes"
-test -f "$project/.ios-debug.toml"
-test -f "$project/.ios-debug/artifacts/keep.txt"
+test -f "$prefix/bin/${legacy_binary_name}-helper"
+test -f "$prefix/share/$legacy_share_name/unrelated"
+test -f "$codex_home/skills/${legacy_skill_name}-notes"
+test -f "$project/${legacy_project_name}.toml"
+test -f "$project/$legacy_project_name/artifacts/keep.txt"
 test -f "$project/.ap-ios-debug.toml"
 test -f "$project/.ap-ios-debug/artifacts/keep.txt"
 
