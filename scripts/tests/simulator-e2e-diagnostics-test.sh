@@ -3,6 +3,12 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 secret='simulator-diagnostic-secret'
+legacy_scheme_pattern='(?<!AP)IOS''DebugMissingScheme'
+
+if rg --pcre2 "$legacy_scheme_pattern" "$0"; then
+  echo "simulator E2E diagnostics fixture contains a legacy scheme name" >&2
+  exit 1
+fi
 
 # shellcheck source=../secret-scan.sh
 source "$root/scripts/secret-scan.sh"
@@ -45,7 +51,7 @@ fi
 
 set +e
 diagnostic="$(
-  AP_IOS_DEBUG_E2E_SCHEME='IOSDebugMissingScheme' \
+  AP_IOS_DEBUG_E2E_SCHEME='APIOSDebugMissingScheme' \
   AP_IOS_DEBUG_E2E_TOKEN="$secret" \
   "$root/scripts/simulator-e2e.sh" 2>&1
 )"
@@ -54,7 +60,7 @@ set -e
 
 test "$status" -ne 0
 grep -Fq 'FAIL: build APIOSDebugDemo' <<<"$diagnostic"
-grep -Fq 'IOSDebugMissingScheme' <<<"$diagnostic"
+grep -Fq 'APIOSDebugMissingScheme' <<<"$diagnostic"
 if grep -Fq "$secret" <<<"$diagnostic"; then
   echo "simulator E2E diagnostics leaked AP_IOS_DEBUG_TOKEN" >&2
   exit 1
