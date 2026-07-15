@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/doctor"
-	"github.com/yangy003/ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/doctor"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
 )
 
 func newDoctorCommand(rt *Runtime, deps doctor.Dependencies, version string) *cobra.Command {
@@ -53,7 +53,7 @@ func formatDoctorReport(report doctor.Report) string {
 	if report.Healthy {
 		health = "healthy"
 	}
-	fmt.Fprintf(&output, "Doctor: %s (ios-debug %s)\n", health, humanCell(report.Version))
+	fmt.Fprintf(&output, "Doctor: %s (ap-ios-debug %s)\n", health, humanCell(report.Version))
 	for _, check := range report.Checks {
 		fmt.Fprintf(&output, "%s: %s - %s", check.Name, check.Status, humanCell(check.Message))
 		if check.Hint != "" {

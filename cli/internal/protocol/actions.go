@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 var actionIdentifier = regexp.MustCompile(`^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)+$`)

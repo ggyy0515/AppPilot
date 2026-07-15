@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/device"
-	"github.com/yangy003/ios-debug-system/cli/internal/doctor"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/doctor"
 )
 
 type discoverer struct {
@@ -57,7 +57,7 @@ func (l countingLocator) Locate() (string, error) {
 
 func healthyDependencies(t *testing.T) doctor.Dependencies {
 	t.Helper()
-	executable := filepath.Join(t.TempDir(), "ios-debug")
+	executable := filepath.Join(t.TempDir(), "ap-ios-debug")
 	return doctor.Dependencies{
 		Version: "1.2.3",
 		LookPath: func(name string) (string, error) {
@@ -66,7 +66,7 @@ func healthyDependencies(t *testing.T) doctor.Dependencies {
 				return "/usr/bin/xcode-select", nil
 			case "xcrun":
 				return "/usr/bin/xcrun", nil
-			case "ios-debug":
+			case "ap-ios-debug":
 				return executable, nil
 			default:
 				return "", os.ErrNotExist
@@ -89,7 +89,7 @@ func healthyDependencies(t *testing.T) doctor.Dependencies {
 			return 1, nil
 		},
 		CapabilitiesProbe: func(context.Context, config.Config, *device.Device) error { return nil },
-		TemplateLocator:   locator{path: "/installed/IOSDebugKit"},
+		TemplateLocator:   locator{path: "/installed/ap-ios-debug-kit"},
 		ExecutablePath:    executable,
 	}
 }
@@ -219,13 +219,13 @@ func TestRunContinuesAfterRequiredFailureAndCallsApplicableDependenciesOnce(t *t
 		return 1, nil
 	}
 	deps.CapabilitiesProbe = func(context.Context, config.Config, *device.Device) error { capabilitiesN++; return nil }
-	deps.TemplateLocator = countingLocator{path: "/installed/IOSDebugKit", count: &templateN}
+	deps.TemplateLocator = countingLocator{path: "/installed/ap-ios-debug-kit", count: &templateN}
 	original := deps.LookPath
 	deps.LookPath = func(name string) (string, error) {
 		if name == "xcode-select" {
 			return "", os.ErrNotExist
 		}
-		if name == "ios-debug" {
+		if name == "ap-ios-debug" {
 			pathN++
 		}
 		return original(name)
@@ -352,7 +352,7 @@ func TestRunRejectsLateSuccessFromNonContextDependencies(t *testing.T) {
 		deps.Timeout = time.Millisecond
 		original := deps.LookPath
 		deps.LookPath = func(name string) (string, error) {
-			if name == "ios-debug" {
+			if name == "ap-ios-debug" {
 				time.Sleep(3 * time.Millisecond)
 			}
 			return original(name)
@@ -366,7 +366,7 @@ func TestRunRejectsLateSuccessFromNonContextDependencies(t *testing.T) {
 	t.Run("template locator", func(t *testing.T) {
 		deps := healthyDependencies(t)
 		deps.Timeout = time.Millisecond
-		deps.TemplateLocator = delayedLocator{delay: 3 * time.Millisecond, path: "/installed/IOSDebugKit"}
+		deps.TemplateLocator = delayedLocator{delay: 3 * time.Millisecond, path: "/installed/ap-ios-debug-kit"}
 		report, err := doctor.Run(context.Background(), deps)
 		require.Equal(t, contract.RequestTimeout, contract.CodeOf(err))
 		require.False(t, report.Healthy)
@@ -379,7 +379,7 @@ func TestRunMapsRequiredFailuresPrecisely(t *testing.T) {
 	t.Run("configuration", func(t *testing.T) {
 		deps := healthyDependencies(t)
 		deps.ConfigLoader = func(context.Context, config.LoadOptions) (config.Config, error) {
-			return config.Config{}, contract.New(contract.ConfigInvalid, errors.New("IOS_DEBUG_TOKEN bearer-secret"))
+			return config.Config{}, contract.New(contract.ConfigInvalid, errors.New("AP_IOS_DEBUG_TOKEN bearer-secret"))
 		}
 		_, err := doctor.Run(context.Background(), deps)
 		require.Equal(t, contract.ConfigInvalid, contract.CodeOf(err))
@@ -408,8 +408,8 @@ func TestRunWarnsWhenExecutableIsNotDiscoverableThroughPath(t *testing.T) {
 	deps := healthyDependencies(t)
 	original := deps.LookPath
 	deps.LookPath = func(name string) (string, error) {
-		if name == "ios-debug" {
-			return "/another/ios-debug", nil
+		if name == "ap-ios-debug" {
+			return "/another/ap-ios-debug", nil
 		}
 		return original(name)
 	}
@@ -422,7 +422,7 @@ func TestRunWarnsWhenExecutableIsNotDiscoverableThroughPath(t *testing.T) {
 func TestRunSanitizesCommandOutputAndNeverLeaksSecrets(t *testing.T) {
 	deps := healthyDependencies(t)
 	deps.Run = func(context.Context, string, ...string) ([]byte, error) {
-		return []byte("devicectl\x00 1.0\nAuthorization: Bearer bearer-secret\nIOS_DEBUG_TOKEN=configured-secret"), nil
+		return []byte("devicectl\x00 1.0\nAuthorization: Bearer bearer-secret\nAP_IOS_DEBUG_TOKEN=configured-secret"), nil
 	}
 	report, err := doctor.Run(context.Background(), deps)
 	require.NoError(t, err)
@@ -431,7 +431,7 @@ func TestRunSanitizesCommandOutputAndNeverLeaksSecrets(t *testing.T) {
 		encoded += check.Name + check.Status + check.Message + check.Hint
 		require.LessOrEqual(t, len(check.Message), 256)
 	}
-	for _, secret := range []string{"IOS_DEBUG_TOKEN", "Authorization", "bearer-secret", "configured-secret"} {
+	for _, secret := range []string{"AP_IOS_DEBUG_TOKEN", "Authorization", "bearer-secret", "configured-secret"} {
 		require.NotContains(t, encoded, secret)
 	}
 }

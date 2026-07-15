@@ -1,7 +1,7 @@
 #if DEBUG
-import IOSDebugKit
+import APIOSDebugKit
 
-enum IOSDebugBootstrap {
+enum APIOSDebugBootstrap {
     static func start() async throws {}
 }
 #endif

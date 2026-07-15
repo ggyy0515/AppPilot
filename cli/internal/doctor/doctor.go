@@ -11,11 +11,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/buildinfo"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/device"
-	"github.com/yangy003/ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/buildinfo"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
 )
 
 const (
@@ -231,7 +231,7 @@ func checkTransport(ctx context.Context, deps Dependencies, state *runState) (Ch
 
 func checkApp(ctx context.Context, deps Dependencies, state *runState, selected *device.Device, message string) (Check, error) {
 	if deps.AppProbe == nil || deps.ProtocolVersionProbe == nil || deps.CapabilitiesProbe == nil {
-		return failure(contract.AppNotReachable, "App protocol diagnostics are unavailable", "Launch a Debug build with IOSDebugKit enabled.", errors.New("App probes are unavailable"))
+		return failure(contract.AppNotReachable, "App protocol diagnostics are unavailable", "Launch a Debug build with APIOSDebugKit enabled.", errors.New("App probes are unavailable"))
 	}
 	if err := deps.AppProbe(ctx, state.config, selected); err != nil {
 		return failure(classifyCode(err, ctx.Err(), contract.AppNotReachable), "The App debug server is not reachable", hintForCode(contract.AppNotReachable), err)
@@ -258,24 +258,24 @@ func checkConfig(_ context.Context, _ Dependencies, state *runState) (Check, err
 
 func checkTemplate(_ context.Context, deps Dependencies, _ *runState) (Check, error) {
 	if deps.TemplateLocator == nil {
-		return failure(contract.IOFailure, "IOSDebugKit template is unavailable", "Run make install-local from the repository.", errors.New("template locator is unavailable"))
+		return failure(contract.IOFailure, "APIOSDebugKit template is unavailable", "Run make install-local from the repository.", errors.New("template locator is unavailable"))
 	}
 	path, err := deps.TemplateLocator.Locate()
 	if err != nil || path == "" {
 		if err == nil {
 			err = errors.New("template path is empty")
 		}
-		return failure(classifyCode(err, nil, contract.IOFailure), "IOSDebugKit template is unavailable", "Run make install-local from the repository.", err)
+		return failure(classifyCode(err, nil, contract.IOFailure), "APIOSDebugKit template is unavailable", "Run make install-local from the repository.", err)
 	}
-	return passed("IOSDebugKit template is available"), nil
+	return passed("APIOSDebugKit template is available"), nil
 }
 
 func checkPath(_ context.Context, deps Dependencies, _ *runState) (Check, error) {
-	found, err := deps.LookPath("ios-debug")
+	found, err := deps.LookPath("ap-ios-debug")
 	if err != nil || !samePath(found, deps.ExecutablePath) {
-		return warning("The running ios-debug is not the executable resolved through PATH", "Add the installed ios-debug directory to PATH."), nil
+		return warning("The running ap-ios-debug is not the executable resolved through PATH", "Add the installed ap-ios-debug directory to PATH."), nil
 	}
-	return passed("ios-debug resolves through PATH"), nil
+	return passed("ap-ios-debug resolves through PATH"), nil
 }
 
 func resolveUSBDevice(devices []device.Device, identifier string) (device.Device, bool, error) {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 func TestEmitterWritesExactlyOneStableErrorDocument(t *testing.T) {
@@ -67,7 +67,7 @@ func TestExitCodeFallsBackForExternallyConstructedUnknownError(t *testing.T) {
 	require.Equal(t, contract.ProtocolMismatch, contract.CodeOf(err))
 	require.Equal(t, 5, contract.ExitCode(err))
 	require.NoError(t, emitter.Failure(err))
-	require.Equal(t, "{\"ok\":false,\"error\":{\"code\":\"protocol_mismatch\",\"message\":\"The App debug protocol is incompatible.\",\"hint\":\"Use an IOSDebugKit build that implements protocol version 1.\"}}\n", out.String())
+	require.Equal(t, "{\"ok\":false,\"error\":{\"code\":\"protocol_mismatch\",\"message\":\"The App debug protocol is incompatible.\",\"hint\":\"Use an APIOSDebugKit build that implements protocol version 1.\"}}\n", out.String())
 	require.NotContains(t, out.String(), "secret")
 }
 

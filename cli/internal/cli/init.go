@@ -5,19 +5,19 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
 )
 
 func newInitCommand(rt *Runtime) *cobra.Command {
 	var local bool
 	command := &cobra.Command{
 		Use:   "init",
-		Short: "Create the project-local ios-debug configuration",
+		Short: "Create the project-local ap-ios-debug configuration",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !local {
-				return contract.NewWithHint(contract.ConfigInvalid, nil, "Pass --local to manage only the current project's .ios-debug.toml.")
+				return contract.NewWithHint(contract.ConfigInvalid, nil, "Pass --local to manage only the current project's .ap-ios-debug.toml.")
 			}
 			root := rt.workingDir
 			if root == "" {
@@ -38,6 +38,6 @@ func newInitCommand(rt *Runtime) *cobra.Command {
 			return rt.Success(data, metaFor(nil, rt.Elapsed()), fmt.Sprintf("%s\t%s\n", file.Status, file.Path))
 		},
 	}
-	command.Flags().BoolVar(&local, "local", false, "manage only the current project's .ios-debug.toml")
+	command.Flags().BoolVar(&local, "local", false, "manage only the current project's .ap-ios-debug.toml")
 	return command
 }

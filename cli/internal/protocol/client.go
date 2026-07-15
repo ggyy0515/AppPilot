@@ -15,15 +15,15 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/transport"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/transport"
 )
 
 const (
 	protocolVersion = 1
 	maxRequestBytes = 1 << 20
 	maxHeaderBytes  = 32 << 10
-	baseURL         = "http://ios-debug.local"
+	baseURL         = "http://ap-ios-debug.local"
 )
 
 var lowercaseSHA256 = regexp.MustCompile(`^[0-9a-f]{64}$`)

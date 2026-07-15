@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 type Locator interface {
@@ -25,16 +25,16 @@ func (l locator) Locate() (string, error) {
 	if l.executablePath == "" || !filepath.IsAbs(l.executablePath) || l.userHome == "" || !filepath.IsAbs(l.userHome) {
 		return "", contract.New(contract.IOFailure, fs.ErrInvalid)
 	}
-	candidates := []string{filepath.Join(l.userHome, ".local", "share", "ios-debug", "IOSDebugKit")}
+	candidates := []string{filepath.Join(l.userHome, ".local", "share", "ap-ios-debug", "ap-ios-debug-kit")}
 	for directory := filepath.Dir(l.executablePath); ; directory = filepath.Dir(directory) {
-		candidates = append(candidates, filepath.Join(directory, "swift", "IOSDebugKit"))
+		candidates = append(candidates, filepath.Join(directory, "swift", "ap-ios-debug-kit"))
 		parent := filepath.Dir(directory)
 		if parent == directory {
 			break
 		}
 	}
 	for _, candidate := range candidates {
-		if regular(filepath.Join(candidate, "Package.swift")) && regular(filepath.Join(candidate, "Templates", "IOSDebugBootstrap.swift")) {
+		if regular(filepath.Join(candidate, "Package.swift")) && regular(filepath.Join(candidate, "Templates", "APIOSDebugBootstrap.swift")) {
 			return candidate, nil
 		}
 	}

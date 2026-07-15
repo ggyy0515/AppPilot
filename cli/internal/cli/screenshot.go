@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ios-debug-system/cli/internal/artifact"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/protocol"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/artifact"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/protocol"
 )
 
 const screenshotMaxBytes int64 = 25 << 20
@@ -62,9 +62,9 @@ func newScreenshotCapture(rt *Runtime) *cobra.Command {
 			}
 
 			if cfg.Transport == "tcp" {
-				info.NextCommands = []string{fmt.Sprintf("ios-debug --json state get --transport tcp --tcp-host %s", cfg.TCPHost)}
+				info.NextCommands = []string{fmt.Sprintf("ap-ios-debug --json state get --transport tcp --tcp-host %s", cfg.TCPHost)}
 			} else {
-				info.NextCommands = []string{fmt.Sprintf("ios-debug --json state get --device %s", selected.UDID)}
+				info.NextCommands = []string{fmt.Sprintf("ap-ios-debug --json state get --device %s", selected.UDID)}
 			}
 			result := screenshotResult{Info: info, ScreenshotMeta: screenshotMeta}
 			return rt.Success(result, metaFor(selected, rt.Elapsed()), fmt.Sprintf("Screenshot saved to %s.\n", humanCell(info.Path)))

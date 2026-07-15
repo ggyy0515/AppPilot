@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/artifact"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/artifact"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 func TestWriteIsAtomicPrivateAndChecksummed(t *testing.T) {
@@ -376,7 +376,7 @@ func sha256Hex(value []byte) string {
 
 func tempArtifacts(t *testing.T, directory string) []string {
 	t.Helper()
-	matches, err := filepath.Glob(filepath.Join(directory, ".ios-debug-*"))
+	matches, err := filepath.Glob(filepath.Join(directory, ".ap-ios-debug-*"))
 	require.NoError(t, err)
 	return matches
 }

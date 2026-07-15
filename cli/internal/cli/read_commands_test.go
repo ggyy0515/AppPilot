@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/device"
-	"github.com/yangy003/ios-debug-system/cli/internal/protocol"
-	"github.com/yangy003/ios-debug-system/cli/internal/transport"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/protocol"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/transport"
 )
 
 type fakeDeviceDiscoverer struct {

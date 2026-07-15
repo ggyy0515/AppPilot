@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 const devicectlJSONVersion = 3
@@ -65,7 +65,7 @@ func (d *Discoverer) CheckReady(ctx context.Context, selected Device) error {
 }
 
 func tempJSONPath(directory string) (string, error) {
-	file, err := os.CreateTemp(directory, "ios-debug-devicectl-*.json")
+	file, err := os.CreateTemp(directory, "ap-ios-debug-devicectl-*.json")
 	if err != nil {
 		return "", err
 	}

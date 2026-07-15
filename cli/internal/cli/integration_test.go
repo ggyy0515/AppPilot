@@ -17,12 +17,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/cli"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/protocol"
-	"github.com/yangy003/ios-debug-system/cli/internal/testutil/fakeapp"
-	"github.com/yangy003/ios-debug-system/cli/internal/transport"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/cli"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/protocol"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/testutil/fakeapp"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/transport"
 )
 
 func TestAllCommandsAgainstFakeApp(t *testing.T) {
@@ -95,14 +95,14 @@ func TestProductionDoctorUsesCommandTCPFlagsInEitherOrder(t *testing.T) {
 		{name: "environment", args: []string{"--json", "doctor"}, setup: func(t *testing.T, deps *cli.Dependencies) {
 			working := t.TempDir()
 			contents := fmt.Sprintf("transport = \"tcp\"\ntcp_host = %q\nport = 1\n", app.Host)
-			require.NoError(t, os.WriteFile(filepath.Join(working, ".ios-debug.toml"), []byte(contents), 0o600))
+			require.NoError(t, os.WriteFile(filepath.Join(working, ".ap-ios-debug.toml"), []byte(contents), 0o600))
 			deps.WorkingDir = working
-			t.Setenv("IOS_DEBUG_PORT", strconv.Itoa(int(app.Port)))
+			t.Setenv("AP_IOS_DEBUG_PORT", strconv.Itoa(int(app.Port)))
 		}},
 		{name: "project TOML", args: []string{"--json", "doctor"}, setup: func(t *testing.T, deps *cli.Dependencies) {
 			working := t.TempDir()
 			contents := fmt.Sprintf("transport = \"tcp\"\ntcp_host = %q\nport = %d\n", app.Host, app.Port)
-			require.NoError(t, os.WriteFile(filepath.Join(working, ".ios-debug.toml"), []byte(contents), 0o600))
+			require.NoError(t, os.WriteFile(filepath.Join(working, ".ap-ios-debug.toml"), []byte(contents), 0o600))
 			deps.WorkingDir = working
 		}},
 	}
@@ -159,7 +159,7 @@ func TestTokenIsNotWrittenToEitherStream(t *testing.T) {
 	args := []string{"--json", "--transport", "tcp", "--tcp-host", app.Host, "--port", strconv.Itoa(int(app.Port)), "app", "probe"}
 	command := exec.Command(binary, args...)
 	command.Dir = "/tmp"
-	command.Env = append(os.Environ(), "HOME="+t.TempDir(), "IOS_DEBUG_TOKEN="+secret)
+	command.Env = append(os.Environ(), "HOME="+t.TempDir(), "AP_IOS_DEBUG_TOKEN="+secret)
 	var stdout, stderr bytes.Buffer
 	command.Stdout, command.Stderr = &stdout, &stderr
 	require.NoError(t, command.Run(), stderr.String())
@@ -200,25 +200,25 @@ func TestSequentialCommandsCloseEveryConnection(t *testing.T) {
 func TestInstalledBinaryFindsTemplateFromTemporaryHome(t *testing.T) {
 	binary := buildCLI(t)
 	home := t.TempDir()
-	template := filepath.Join(home, ".local", "share", "ios-debug", "IOSDebugKit")
+	template := filepath.Join(home, ".local", "share", "ap-ios-debug", "ap-ios-debug-kit")
 	require.NoError(t, os.MkdirAll(filepath.Join(template, "Templates"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(template, "Package.swift"), []byte("// fixture\n"), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "IOSDebugBootstrap.swift"), []byte("// fixture\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "APIOSDebugBootstrap.swift"), []byte("// fixture\n"), 0o644))
 	project := t.TempDir()
 	command := exec.Command(binary, "--json", "app", "scaffold", "--into", project, "--dry-run")
 	command.Dir = "/tmp"
 	command.Env = append(os.Environ(), "HOME="+home)
 	result, err := command.CombinedOutput()
 	require.NoError(t, err, string(result))
-	require.Contains(t, string(result), "IOSDebugBootstrap.swift")
+	require.Contains(t, string(result), "APIOSDebugBootstrap.swift")
 }
 
 func buildCLI(t *testing.T) string {
 	t.Helper()
 	repository, err := filepath.Abs(filepath.Join("..", ".."))
 	require.NoError(t, err)
-	binary := filepath.Join(t.TempDir(), "ios-debug")
-	build := exec.Command("go", "build", "-trimpath", "-o", binary, "./cmd/ios-debug")
+	binary := filepath.Join(t.TempDir(), "ap-ios-debug")
+	build := exec.Command("go", "build", "-trimpath", "-o", binary, "./cmd/ap-ios-debug")
 	build.Dir = repository
 	output, err := build.CombinedOutput()
 	require.NoError(t, err, string(output))

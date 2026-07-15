@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ios-debug-system/cli/internal/artifact"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/protocol"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/artifact"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/protocol"
 )
 
 const recordingMaxBytes int64 = 500 << 20
@@ -112,7 +112,7 @@ func newRecordingStop(rt *Runtime) *cobra.Command {
 			info.NextCommands = []string{"open " + info.Path}
 			deleted := service.Delete(ctx, stopped.RecordingID) == nil
 			if !deleted {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "ios-debug: warning: verified recording saved locally; device cleanup will retry through the App retention policy.")
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "ap-ios-debug: warning: verified recording saved locally; device cleanup will retry through the App retention policy.")
 			}
 			result := recordingResult{
 				Path: info.Path, ByteCount: info.ByteCount, MIME: info.MIME, SHA256: info.SHA256,

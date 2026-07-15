@@ -13,11 +13,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 	"golang.org/x/sys/unix"
 )
 
-const projectConfig = "port = 9876\noutput_dir = \".ios-debug/artifacts\"\n"
+const projectConfig = "port = 9876\noutput_dir = \".ap-ios-debug/artifacts\"\n"
 
 type FilePlan struct {
 	Source string      `json:"-"`
@@ -57,7 +57,7 @@ func Plan(into string, locator Locator) (ScaffoldPlan, error) {
 		return ScaffoldPlan{}, contract.New(contract.IOFailure, err)
 	}
 
-	packagePath := filepath.Join(root, "DebugTools", "IOSDebugKit")
+	packagePath := filepath.Join(root, "DebugTools", "ap-ios-debug-kit")
 	if err := validateDestinationAncestors(root, filepath.Join(packagePath, "Package.swift")); err != nil {
 		return ScaffoldPlan{}, err
 	}
@@ -65,14 +65,14 @@ func Plan(into string, locator Locator) (ScaffoldPlan, error) {
 	if err != nil {
 		return ScaffoldPlan{}, err
 	}
-	bootstrapSource := filepath.Join(templateRoot, "Templates", "IOSDebugBootstrap.swift")
-	bootstrap, err := sourceFilePlan(bootstrapSource, filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift"))
+	bootstrapSource := filepath.Join(templateRoot, "Templates", "APIOSDebugBootstrap.swift")
+	bootstrap, err := sourceFilePlan(bootstrapSource, filepath.Join(root, "DebugTools", "APIOSDebugBootstrap.swift"))
 	if err != nil {
 		return ScaffoldPlan{}, err
 	}
 	files = append(files, bootstrap)
 	configuration := FilePlan{
-		Path:     filepath.Join(root, ".ios-debug.toml"),
+		Path:     filepath.Join(root, ".ap-ios-debug.toml"),
 		Mode:     0o600,
 		contents: []byte(projectConfig),
 	}
@@ -95,8 +95,8 @@ func Plan(into string, locator Locator) (ScaffoldPlan, error) {
 		xcodeSteps: []string{
 			"In Xcode, select File > Add Package Dependencies…",
 			"Click Add Local… and choose " + packagePath + ".",
-			"Add the IOSDebugKit product only to a dedicated Debug app target; keep every Release or production target free of this package dependency.",
-			"Add " + filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift") + " only to the dedicated Debug app target, call try await IOSDebugBootstrap.start() at Debug startup, and call await IOSDebugBootstrap.stop() later at shutdown.",
+			"Add the APIOSDebugKit product only to a dedicated Debug app target; keep every Release or production target free of this package dependency.",
+			"Add " + filepath.Join(root, "DebugTools", "APIOSDebugBootstrap.swift") + " only to the dedicated Debug app target, call try await APIOSDebugBootstrap.start() at Debug startup, and call await APIOSDebugBootstrap.stop() later at shutdown.",
 		},
 	}, nil
 }
@@ -157,7 +157,7 @@ func InitLocal(root string) (FilePlan, error) {
 	if err != nil {
 		return FilePlan{}, contract.New(contract.IOFailure, err)
 	}
-	file := FilePlan{Path: filepath.Join(absoluteRoot, ".ios-debug.toml"), Mode: 0o600, contents: []byte(projectConfig)}
+	file := FilePlan{Path: filepath.Join(absoluteRoot, ".ap-ios-debug.toml"), Mode: 0o600, contents: []byte(projectConfig)}
 	if err := validateDestinationAncestors(absoluteRoot, file.Path); err != nil {
 		return FilePlan{}, err
 	}
@@ -166,7 +166,7 @@ func InitLocal(root string) (FilePlan, error) {
 		return FilePlan{}, err
 	}
 	if file.Status == "conflict" {
-		return FilePlan{}, contract.NewWithHint(contract.ConfigInvalid, nil, "Remove or reconcile .ios-debug.toml, then rerun ios-debug init --local.")
+		return FilePlan{}, contract.NewWithHint(contract.ConfigInvalid, nil, "Remove or reconcile .ap-ios-debug.toml, then rerun ap-ios-debug init --local.")
 	}
 	result, err := applyWithCommitHook(ScaffoldPlan{root: absoluteRoot, files: []FilePlan{file}}, nil)
 	if err != nil {
@@ -340,7 +340,7 @@ func stageFiles(plan ScaffoldPlan) (stagedTransaction, error) {
 	if err := validateExistingDirectoryAncestors(parent); err != nil {
 		return stagedTransaction{}, err
 	}
-	directory, err := os.MkdirTemp(parent, ".ios-debug-scaffold-*")
+	directory, err := os.MkdirTemp(parent, ".ap-ios-debug-scaffold-*")
 	if err != nil {
 		return stagedTransaction{}, contract.New(contract.IOFailure, err)
 	}

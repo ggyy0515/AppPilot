@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 type Info struct {
@@ -47,7 +47,7 @@ func Write(ctx context.Context, src io.Reader, options WriteOptions) (info Info,
 	if err = os.MkdirAll(directory, 0o700); err != nil {
 		return info, contract.New(contract.IOFailure, err)
 	}
-	temp, err := createTempFile(directory, ".ios-debug-*")
+	temp, err := createTempFile(directory, ".ap-ios-debug-*")
 	if err != nil {
 		return info, contract.New(contract.IOFailure, err)
 	}

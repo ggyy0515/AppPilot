@@ -5,7 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 const invalidPathHint = "Pass one concrete /v1/... route without a query, fragment, directory, or traversal segment."

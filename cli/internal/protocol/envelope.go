@@ -3,7 +3,7 @@ package protocol
 import (
 	"encoding/json"
 
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 type wireEnvelope struct {

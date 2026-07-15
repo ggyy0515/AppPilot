@@ -16,13 +16,13 @@ import (
 
 	"github.com/danielpaulus/go-ios/ios"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/device"
-	"github.com/yangy003/ios-debug-system/cli/internal/doctor"
-	"github.com/yangy003/ios-debug-system/cli/internal/protocol"
-	"github.com/yangy003/ios-debug-system/cli/internal/scaffold"
-	"github.com/yangy003/ios-debug-system/cli/internal/transport"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/doctor"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/protocol"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/transport"
 )
 
 type Dependencies struct {
@@ -153,12 +153,13 @@ func NewProductionDependencies(stdout, stderr io.Writer) Dependencies {
 
 func NewRoot(deps Dependencies) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "ios-debug",
-		Short:         "Debug an opted-in iOS App through a stable local protocol",
+		Use:           "ap-ios-debug",
+		Short:         "AppPilot iOS Debug CLI",
 		Version:       deps.Version,
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}
+	cmd.SetVersionTemplate("AppPilot {{.Name}} version {{.Version}}\n")
 	cmd.SetOut(deps.Stdout)
 	cmd.SetErr(deps.Stderr)
 	cmd.PersistentFlags().Bool("json", false, "emit exactly one JSON document on stdout")
@@ -222,7 +223,7 @@ func Execute(args []string, stdout, stderr io.Writer, deps Dependencies) int {
 	if hasJSONFlag(args) {
 		_ = emitter.Failure(stable)
 	} else {
-		_, _ = fmt.Fprintf(stderr, "ios-debug: %s %s\n", stable.Message, stable.Hint)
+		_, _ = fmt.Fprintf(stderr, "ap-ios-debug: %s %s\n", stable.Message, stable.Hint)
 	}
 	return contract.ExitCode(stable)
 }

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/danielpaulus/go-ios/ios"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 type muxDevice struct {

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
 )
 
 func newAppScaffold(rt *Runtime) *cobra.Command {
@@ -13,7 +13,7 @@ func newAppScaffold(rt *Runtime) *cobra.Command {
 	var dryRun bool
 	command := &cobra.Command{
 		Use:   "scaffold",
-		Short: "Plan or copy IOSDebugKit into an App project",
+		Short: "Plan or copy APIOSDebugKit into an App project",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			plan, err := scaffold.Plan(into, scaffold.NewLocator(rt.executablePath, rt.userHome))

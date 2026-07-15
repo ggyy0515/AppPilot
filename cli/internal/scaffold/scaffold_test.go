@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
 )
 
-const projectConfig = "port = 9876\noutput_dir = \".ios-debug/artifacts\"\n"
+const projectConfig = "port = 9876\noutput_dir = \".ap-ios-debug/artifacts\"\n"
 
 type fixedLocator struct {
 	Path string
@@ -23,12 +23,12 @@ func (l fixedLocator) Locate() (string, error) { return l.Path, l.Err }
 
 func TestLocatorPrefersInstalledTemplateAndDoesNotUseWorkingDirectory(t *testing.T) {
 	home := t.TempDir()
-	installed := filepath.Join(home, ".local", "share", "ios-debug", "IOSDebugKit")
+	installed := filepath.Join(home, ".local", "share", "ap-ios-debug", "ap-ios-debug-kit")
 	makeTemplate(t, installed, "installed")
 
 	repository := t.TempDir()
-	makeTemplate(t, filepath.Join(repository, "swift", "IOSDebugKit"), "repository")
-	executable := filepath.Join(repository, "cli", "bin", "ios-debug")
+	makeTemplate(t, filepath.Join(repository, "swift", "ap-ios-debug-kit"), "repository")
+	executable := filepath.Join(repository, "cli", "bin", "ap-ios-debug")
 
 	other := t.TempDir()
 	oldWorkingDirectory, err := os.Getwd()
@@ -44,16 +44,16 @@ func TestLocatorPrefersInstalledTemplateAndDoesNotUseWorkingDirectory(t *testing
 func TestLocatorFallsBackToExecutableAncestorAndRejectsSymlinkedRequiredFiles(t *testing.T) {
 	home := t.TempDir()
 	repository := t.TempDir()
-	template := filepath.Join(repository, "swift", "IOSDebugKit")
+	template := filepath.Join(repository, "swift", "ap-ios-debug-kit")
 	makeTemplate(t, template, "repository")
-	executable := filepath.Join(repository, "out", "debug", "ios-debug")
+	executable := filepath.Join(repository, "out", "debug", "ap-ios-debug")
 
 	located, err := scaffold.NewLocator(executable, home).Locate()
 	require.NoError(t, err)
 	require.Equal(t, template, located)
 
 	require.NoError(t, os.Remove(filepath.Join(template, "Package.swift")))
-	require.NoError(t, os.Symlink(filepath.Join(template, "Templates", "IOSDebugBootstrap.swift"), filepath.Join(template, "Package.swift")))
+	require.NoError(t, os.Symlink(filepath.Join(template, "Templates", "APIOSDebugBootstrap.swift"), filepath.Join(template, "Package.swift")))
 	_, err = scaffold.NewLocator(executable, home).Locate()
 	require.Equal(t, contract.IOFailure, contract.CodeOf(err))
 }
@@ -71,9 +71,9 @@ func TestLocatorRejectsEmptyAndRelativeInputsIndependentlyOfWorkingDirectory(t *
 		home       string
 	}{
 		{name: "empty executable", executable: "", home: t.TempDir()},
-		{name: "relative executable", executable: filepath.Join("bin", "ios-debug"), home: t.TempDir()},
-		{name: "empty home", executable: filepath.Join(t.TempDir(), "ios-debug"), home: ""},
-		{name: "relative home", executable: filepath.Join(t.TempDir(), "ios-debug"), home: "home"},
+		{name: "relative executable", executable: filepath.Join("bin", "ap-ios-debug"), home: t.TempDir()},
+		{name: "empty home", executable: filepath.Join(t.TempDir(), "ap-ios-debug"), home: ""},
+		{name: "relative home", executable: filepath.Join(t.TempDir(), "ap-ios-debug"), home: "home"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := scaffold.NewLocator(test.executable, test.home).Locate()
@@ -84,7 +84,7 @@ func TestLocatorRejectsEmptyAndRelativeInputsIndependentlyOfWorkingDirectory(t *
 
 func TestPlanReportsCreateUnchangedConflictWithoutWriting(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, ".ios-debug.toml"), "different\n", 0o600)
+	writeFile(t, filepath.Join(root, ".ap-ios-debug.toml"), "different\n", 0o600)
 
 	plan, err := scaffold.Plan(root, fixedLocator{Path: fixtureTemplate(t)})
 	require.NoError(t, err)
@@ -92,16 +92,16 @@ func TestPlanReportsCreateUnchangedConflictWithoutWriting(t *testing.T) {
 
 	require.True(t, result.DryRun)
 	require.Equal(t, root, result.Root)
-	require.Equal(t, filepath.Join(root, "DebugTools", "IOSDebugKit"), result.PackagePath)
-	require.Equal(t, "conflict", statusFor(t, result, filepath.Join(root, ".ios-debug.toml")))
-	require.Equal(t, "create", statusFor(t, result, filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift")))
-	require.NoDirExists(t, filepath.Join(root, "DebugTools", "IOSDebugKit"))
+	require.Equal(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit"), result.PackagePath)
+	require.Equal(t, "conflict", statusFor(t, result, filepath.Join(root, ".ap-ios-debug.toml")))
+	require.Equal(t, "create", statusFor(t, result, filepath.Join(root, "DebugTools", "APIOSDebugBootstrap.swift")))
+	require.NoDirExists(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit"))
 	requireSortedPaths(t, result)
 }
 
 func TestApplyRefusesAllWritesWhenAnyConflictExists(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, ".ios-debug.toml"), "different\n", 0o600)
+	writeFile(t, filepath.Join(root, ".ap-ios-debug.toml"), "different\n", 0o600)
 	plan, err := scaffold.Plan(root, fixedLocator{Path: fixtureTemplate(t)})
 	require.NoError(t, err)
 
@@ -113,7 +113,7 @@ func TestApplyRefusesAllWritesWhenAnyConflictExists(t *testing.T) {
 func TestPlanTreatsMatchingPackageBytesWithDifferentModeAsUnchanged(t *testing.T) {
 	template := copyFixture(t)
 	root := t.TempDir()
-	destination := filepath.Join(root, "DebugTools", "IOSDebugKit", "Package.swift")
+	destination := filepath.Join(root, "DebugTools", "ap-ios-debug-kit", "Package.swift")
 	writeFile(t, destination, readFile(t, filepath.Join(template, "Package.swift")), 0o600)
 	require.NoError(t, os.Chmod(destination, 0o600))
 
@@ -158,7 +158,7 @@ func TestPlanAndInitAcceptDarwinSystemTmpAlias(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		t.Skip("Darwin exposes /tmp as a root-owned platform alias")
 	}
-	container, err := os.MkdirTemp("/tmp", "ios-debug-scaffold-test-*")
+	container, err := os.MkdirTemp("/tmp", "ap-ios-debug-scaffold-test-*")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(container)) })
 
@@ -167,12 +167,12 @@ func TestPlanAndInitAcceptDarwinSystemTmpAlias(t *testing.T) {
 	require.NoError(t, err)
 	_, err = scaffold.Apply(plan)
 	require.NoError(t, err)
-	require.FileExists(t, filepath.Join(root, ".ios-debug.toml"))
+	require.FileExists(t, filepath.Join(root, ".ap-ios-debug.toml"))
 
 	localRoot := filepath.Join(container, "local-project")
 	_, err = scaffold.InitLocal(localRoot)
 	require.NoError(t, err)
-	require.FileExists(t, filepath.Join(localRoot, ".ios-debug.toml"))
+	require.FileExists(t, filepath.Join(localRoot, ".ap-ios-debug.toml"))
 }
 
 func TestApplyRejectsAncestorSymlinkIntroducedAfterPlanWithoutWritingOutside(t *testing.T) {
@@ -202,14 +202,14 @@ func TestApplyUsesPlanContentAndModeSnapshotAfterSourceChanges(t *testing.T) {
 	require.NoError(t, os.Chmod(source, 0o600))
 	_, err = scaffold.Apply(plan)
 	require.NoError(t, err)
-	destination := filepath.Join(root, "DebugTools", "IOSDebugKit", "Package.swift")
+	destination := filepath.Join(root, "DebugTools", "ap-ios-debug-kit", "Package.swift")
 	require.Equal(t, readFile(t, filepath.Join(fixtureTemplate(t), "Package.swift")), readFile(t, destination))
 	require.Equal(t, os.FileMode(0o640), fileMode(t, destination))
 }
 
 func TestApplyCopiesExactBytesModesAndBecomesEntirelyUnchanged(t *testing.T) {
 	template := copyFixture(t)
-	script := filepath.Join(template, "Sources", "IOSDebugKit", "script.sh")
+	script := filepath.Join(template, "Sources", "APIOSDebugKit", "script.sh")
 	writeFile(t, script, "#!/bin/sh\necho debug\n", 0o755)
 	writeFile(t, filepath.Join(template, ".build", "secret"), "exclude", 0o644)
 	writeFile(t, filepath.Join(template, "Sources", ".swiftpm", "state"), "exclude", 0o644)
@@ -223,14 +223,14 @@ func TestApplyCopiesExactBytesModesAndBecomesEntirelyUnchanged(t *testing.T) {
 	syscall.Umask(oldUmask)
 	require.NoError(t, err)
 	require.False(t, result.DryRun)
-	require.Equal(t, "create", statusFor(t, result, filepath.Join(root, ".ios-debug.toml")))
-	require.Equal(t, projectConfig, readFile(t, filepath.Join(root, ".ios-debug.toml")))
-	require.Equal(t, readFile(t, filepath.Join(template, "Package.swift")), readFile(t, filepath.Join(root, "DebugTools", "IOSDebugKit", "Package.swift")))
-	require.Equal(t, readFile(t, filepath.Join(template, "Templates", "IOSDebugBootstrap.swift")), readFile(t, filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift")))
-	require.Equal(t, os.FileMode(0o755), fileMode(t, filepath.Join(root, "DebugTools", "IOSDebugKit", "Sources", "IOSDebugKit", "script.sh")))
-	require.Equal(t, os.FileMode(0o600), fileMode(t, filepath.Join(root, ".ios-debug.toml")))
-	require.NoFileExists(t, filepath.Join(root, "DebugTools", "IOSDebugKit", ".build", "secret"))
-	require.NoFileExists(t, filepath.Join(root, "DebugTools", "IOSDebugKit", "Sources", ".swiftpm", "state"))
+	require.Equal(t, "create", statusFor(t, result, filepath.Join(root, ".ap-ios-debug.toml")))
+	require.Equal(t, projectConfig, readFile(t, filepath.Join(root, ".ap-ios-debug.toml")))
+	require.Equal(t, readFile(t, filepath.Join(template, "Package.swift")), readFile(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit", "Package.swift")))
+	require.Equal(t, readFile(t, filepath.Join(template, "Templates", "APIOSDebugBootstrap.swift")), readFile(t, filepath.Join(root, "DebugTools", "APIOSDebugBootstrap.swift")))
+	require.Equal(t, os.FileMode(0o755), fileMode(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit", "Sources", "APIOSDebugKit", "script.sh")))
+	require.Equal(t, os.FileMode(0o600), fileMode(t, filepath.Join(root, ".ap-ios-debug.toml")))
+	require.NoFileExists(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit", ".build", "secret"))
+	require.NoFileExists(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit", "Sources", ".swiftpm", "state"))
 
 	repeated, err := scaffold.Plan(root, fixedLocator{Path: template})
 	require.NoError(t, err)
@@ -279,31 +279,31 @@ func TestPlanReturnsExactXcodeInstructions(t *testing.T) {
 
 	require.Equal(t, []string{
 		"In Xcode, select File > Add Package Dependencies…",
-		"Click Add Local… and choose " + filepath.Join(root, "DebugTools", "IOSDebugKit") + ".",
-		"Add the IOSDebugKit product only to a dedicated Debug app target; keep every Release or production target free of this package dependency.",
-		"Add " + filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift") + " only to the dedicated Debug app target, call try await IOSDebugBootstrap.start() at Debug startup, and call await IOSDebugBootstrap.stop() later at shutdown.",
+		"Click Add Local… and choose " + filepath.Join(root, "DebugTools", "ap-ios-debug-kit") + ".",
+		"Add the APIOSDebugKit product only to a dedicated Debug app target; keep every Release or production target free of this package dependency.",
+		"Add " + filepath.Join(root, "DebugTools", "APIOSDebugBootstrap.swift") + " only to the dedicated Debug app target, call try await APIOSDebugBootstrap.start() at Debug startup, and call await APIOSDebugBootstrap.stop() later at shutdown.",
 	}, plan.Result(true).XcodeSteps)
 }
 
 func fixtureTemplate(t *testing.T) string {
 	t.Helper()
-	path, err := filepath.Abs(filepath.Join("testdata", "IOSDebugKit"))
+	path, err := filepath.Abs(filepath.Join("testdata", "ap-ios-debug-kit"))
 	require.NoError(t, err)
 	return path
 }
 
 func copyFixture(t *testing.T) string {
 	t.Helper()
-	root := filepath.Join(t.TempDir(), "IOSDebugKit")
+	root := filepath.Join(t.TempDir(), "ap-ios-debug-kit")
 	makeTemplate(t, root, readFile(t, filepath.Join(fixtureTemplate(t), "Package.swift")))
-	writeFile(t, filepath.Join(root, "Templates", "IOSDebugBootstrap.swift"), readFile(t, filepath.Join(fixtureTemplate(t), "Templates", "IOSDebugBootstrap.swift")), 0o644)
+	writeFile(t, filepath.Join(root, "Templates", "APIOSDebugBootstrap.swift"), readFile(t, filepath.Join(fixtureTemplate(t), "Templates", "APIOSDebugBootstrap.swift")), 0o644)
 	return root
 }
 
 func makeTemplate(t *testing.T, root, packageBytes string) {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "Package.swift"), packageBytes, 0o644)
-	writeFile(t, filepath.Join(root, "Templates", "IOSDebugBootstrap.swift"), "bootstrap", 0o644)
+	writeFile(t, filepath.Join(root, "Templates", "APIOSDebugBootstrap.swift"), "bootstrap", 0o644)
 }
 
 func writeFile(t *testing.T, path, contents string, mode os.FileMode) {

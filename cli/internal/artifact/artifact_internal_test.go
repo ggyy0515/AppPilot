@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 func TestWriteReportsUnwritableDirectoryDeterministically(t *testing.T) {
@@ -65,7 +65,7 @@ func TestWriteCommitSucceedsWhenFirstTemporaryUnlinkFails(t *testing.T) {
 	require.NoError(t, readErr)
 	require.Equal(t, payload, contents)
 	require.GreaterOrEqual(t, removeCalls, 2)
-	matches, globErr := filepath.Glob(filepath.Join(directory, ".ios-debug-*"))
+	matches, globErr := filepath.Glob(filepath.Join(directory, ".ap-ios-debug-*"))
 	require.NoError(t, globErr)
 	require.Empty(t, matches)
 }

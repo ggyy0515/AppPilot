@@ -11,9 +11,9 @@ import (
 
 	"github.com/danielpaulus/go-ios/ios"
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/device"
-	"github.com/yangy003/ios-debug-system/cli/internal/doctor"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/doctor"
 )
 
 func TestBoundedUSBProbeReturnsWhenContextIsCanceled(t *testing.T) {
@@ -64,7 +64,7 @@ func TestDoctorCommandEmitsStableJSONAndNoSecrets(t *testing.T) {
 	require.True(t, envelope.Data.Healthy)
 	require.Equal(t, "9.8.7", envelope.Data.Version)
 	require.Len(t, envelope.Data.Checks, 6)
-	for _, secret := range []string{"IOS_DEBUG_TOKEN", "Authorization", "configured-secret"} {
+	for _, secret := range []string{"AP_IOS_DEBUG_TOKEN", "Authorization", "configured-secret"} {
 		require.NotContains(t, stdout, secret)
 		require.NotContains(t, stderr, secret)
 	}
@@ -140,12 +140,12 @@ func TestDoctorTextOutputIsConcise(t *testing.T) {
 
 func doctorCommandDependencies(t *testing.T) Dependencies {
 	t.Helper()
-	executable := filepath.Join(t.TempDir(), "ios-debug")
+	executable := filepath.Join(t.TempDir(), "ap-ios-debug")
 	return Dependencies{
 		Version: "9.8.7",
 		Doctor: doctor.Dependencies{
 			LookPath: func(name string) (string, error) {
-				if name == "ios-debug" {
+				if name == "ap-ios-debug" {
 					return executable, nil
 				}
 				return "/usr/bin/" + name, nil
@@ -162,7 +162,7 @@ func doctorCommandDependencies(t *testing.T) Dependencies {
 				return 1, nil
 			},
 			CapabilitiesProbe: func(context.Context, config.Config, *device.Device) error { return nil },
-			TemplateLocator:   doctorLocator{path: "/installed/IOSDebugKit"},
+			TemplateLocator:   doctorLocator{path: "/installed/ap-ios-debug-kit"},
 			ExecutablePath:    executable,
 		},
 		LoadConfig: func(context.Context, config.LoadOptions) (config.Config, error) { return config.Config{}, nil },

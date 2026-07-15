@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/cli"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/cli"
 )
 
 func TestExecuteJSONParseErrorKeepsStdoutPure(t *testing.T) {
@@ -35,7 +35,7 @@ func TestExecuteTextErrorIsConciseAndRedacted(t *testing.T) {
 
 	require.Equal(t, 2, code)
 	require.Empty(t, stdout.String())
-	require.Equal(t, "ios-debug: Configuration is invalid. Use a port from 1 through 65535.\n", stderr.String())
+	require.Equal(t, "ap-ios-debug: Configuration is invalid. Use a port from 1 through 65535.\n", stderr.String())
 	require.NotContains(t, stderr.String(), "70000")
 }
 
@@ -45,15 +45,15 @@ func TestExecuteExplicitJSONFalseUsesTextErrorMode(t *testing.T) {
 
 	require.Equal(t, 2, code)
 	require.Empty(t, stdout.String())
-	require.Equal(t, "ios-debug: Configuration is invalid. Fix the named flag, environment variable, or TOML field.\n", stderr.String())
+	require.Equal(t, "ap-ios-debug: Configuration is invalid. Fix the named flag, environment variable, or TOML field.\n", stderr.String())
 }
 
 func TestRootDefinesStableShell(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	root := cli.NewRoot(cli.Dependencies{Version: "1.2.3", Stdout: &stdout, Stderr: &stderr})
 
-	require.Equal(t, "ios-debug", root.Use)
-	require.Equal(t, "Debug an opted-in iOS App through a stable local protocol", root.Short)
+	require.Equal(t, "ap-ios-debug", root.Use)
+	require.Equal(t, "AppPilot iOS Debug CLI", root.Short)
 	require.Equal(t, "1.2.3", root.Version)
 	require.True(t, root.SilenceErrors)
 	require.True(t, root.SilenceUsage)
@@ -72,7 +72,7 @@ func TestExecuteJSONHelpWritesOneSuccessDocumentForEitherFlagOrder(t *testing.T)
 			document := decodeSingleDocument(t, stdout)
 			require.Equal(t, true, document["ok"])
 			data := document["data"].(map[string]any)
-			require.Contains(t, data["help"], "Debug an opted-in iOS App")
+			require.Contains(t, data["help"], "AppPilot iOS Debug CLI")
 			assertCompleteMeta(t, document)
 		})
 	}
@@ -98,7 +98,7 @@ func TestExecuteJSONRootWithPersistentFlagsWritesOneSuccessDocument(t *testing.T
 		require.Empty(t, stderr, args)
 		document := decodeSingleDocument(t, stdout)
 		require.Equal(t, true, document["ok"], args)
-		require.Contains(t, document["data"].(map[string]any)["help"], "Debug an opted-in iOS App", args)
+		require.Contains(t, document["data"].(map[string]any)["help"], "AppPilot iOS Debug CLI", args)
 		assertCompleteMeta(t, document)
 	}
 }
@@ -119,12 +119,13 @@ func TestExecuteJSONVersionWritesOneSuccessDocumentForEitherFlagOrder(t *testing
 func TestExecuteTextHelpAndVersionRemainPlainText(t *testing.T) {
 	helpOut, helpErr, helpCode := execute(t, []string{"--help"}, cli.Dependencies{Version: "1.2.3"})
 	require.Equal(t, 0, helpCode)
-	require.Contains(t, helpOut, "Debug an opted-in iOS App")
+	require.Contains(t, helpOut, "AppPilot iOS Debug CLI")
 	require.Empty(t, helpErr)
 
 	versionOut, versionErr, versionCode := execute(t, []string{"--version"}, cli.Dependencies{Version: "1.2.3"})
 	require.Equal(t, 0, versionCode)
-	require.Equal(t, "ios-debug version 1.2.3\n", versionOut)
+	require.Contains(t, versionOut, "AppPilot ap-ios-debug version")
+	require.Equal(t, "AppPilot ap-ios-debug version 1.2.3\n", versionOut)
 	require.Empty(t, versionErr)
 }
 

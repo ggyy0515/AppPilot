@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/artifact"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/artifact"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 type recordingStep struct {
@@ -180,7 +180,7 @@ func TestRecordingStopFailuresKeepDeviceFileAndRemoveLocalTemp(t *testing.T) {
 			require.Contains(t, stdout, `"code":"`+string(testCase.code)+`"`)
 			require.Len(t, fake.requestLines(), 2)
 			require.NoFileExists(t, destination)
-			temps, err := filepath.Glob(filepath.Join(directory, ".ios-debug-*"))
+			temps, err := filepath.Glob(filepath.Join(directory, ".ap-ios-debug-*"))
 			require.NoError(t, err)
 			require.Empty(t, temps)
 		})
@@ -200,7 +200,7 @@ func TestRecordingDeleteFailurePreservesVerifiedArtifactAndWarns(t *testing.T) {
 	require.Equal(t, 0, code)
 	require.FileExists(t, destination)
 	require.Contains(t, stdout, `"device_file_deleted":false`)
-	require.Equal(t, "ios-debug: warning: verified recording saved locally; device cleanup will retry through the App retention policy.\n", stderr)
+	require.Equal(t, "ap-ios-debug: warning: verified recording saved locally; device cleanup will retry through the App retention policy.\n", stderr)
 	require.NotContains(t, stderr, "rec-1")
 }
 

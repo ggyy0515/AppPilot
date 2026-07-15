@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 func TestCanonicalValidationPathOnlyAllowsExactTrustedDarwinAliases(t *testing.T) {
@@ -63,14 +63,14 @@ type internalFixedLocator struct{ path string }
 func (l internalFixedLocator) Locate() (string, error) { return l.path, nil }
 
 func TestApplyCommitFailureRollsBackOnlyTransactionFilesAndDirectories(t *testing.T) {
-	template := filepath.Join(t.TempDir(), "IOSDebugKit")
+	template := filepath.Join(t.TempDir(), "ap-ios-debug-kit")
 	require.NoError(t, os.MkdirAll(filepath.Join(template, "Templates"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(template, "Package.swift"), []byte("package"), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "IOSDebugBootstrap.swift"), []byte("bootstrap"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "APIOSDebugBootstrap.swift"), []byte("bootstrap"), 0o644))
 	root := t.TempDir()
 	preexisting := filepath.Join(root, "keep.txt")
 	require.NoError(t, os.WriteFile(preexisting, []byte("keep"), 0o600))
-	preexistingConfig := filepath.Join(root, ".ios-debug.toml")
+	preexistingConfig := filepath.Join(root, ".ap-ios-debug.toml")
 	require.NoError(t, os.WriteFile(preexistingConfig, []byte(projectConfig), 0o600))
 	plan, err := Plan(root, internalFixedLocator{path: template})
 	require.NoError(t, err)
@@ -90,10 +90,10 @@ func TestApplyCommitFailureRollsBackOnlyTransactionFilesAndDirectories(t *testin
 }
 
 func TestPlanResultCannotMutateApplySnapshot(t *testing.T) {
-	template := filepath.Join(t.TempDir(), "IOSDebugKit")
+	template := filepath.Join(t.TempDir(), "ap-ios-debug-kit")
 	require.NoError(t, os.MkdirAll(filepath.Join(template, "Templates"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(template, "Package.swift"), []byte("package"), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "IOSDebugBootstrap.swift"), []byte("bootstrap"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "APIOSDebugBootstrap.swift"), []byte("bootstrap"), 0o644))
 	root := t.TempDir()
 	plan, err := Plan(root, internalFixedLocator{path: template})
 	require.NoError(t, err)
@@ -106,19 +106,19 @@ func TestPlanResultCannotMutateApplySnapshot(t *testing.T) {
 
 	_, err = Apply(plan)
 	require.NoError(t, err)
-	require.Equal(t, "package", mustReadInternal(t, filepath.Join(root, "DebugTools", "IOSDebugKit", "Package.swift")))
-	require.Equal(t, "bootstrap", mustReadInternal(t, filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift")))
+	require.Equal(t, "package", mustReadInternal(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit", "Package.swift")))
+	require.Equal(t, "bootstrap", mustReadInternal(t, filepath.Join(root, "DebugTools", "APIOSDebugBootstrap.swift")))
 }
 
 func TestApplyFailsClosedWhenDestinationAppearsDuringCommit(t *testing.T) {
-	template := filepath.Join(t.TempDir(), "IOSDebugKit")
+	template := filepath.Join(t.TempDir(), "ap-ios-debug-kit")
 	require.NoError(t, os.MkdirAll(filepath.Join(template, "Templates"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(template, "Package.swift"), []byte("package"), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "IOSDebugBootstrap.swift"), []byte("bootstrap"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(template, "Templates", "APIOSDebugBootstrap.swift"), []byte("bootstrap"), 0o644))
 	root := t.TempDir()
 	plan, err := Plan(root, internalFixedLocator{path: template})
 	require.NoError(t, err)
-	target := filepath.Join(root, "DebugTools", "IOSDebugBootstrap.swift")
+	target := filepath.Join(root, "DebugTools", "APIOSDebugBootstrap.swift")
 
 	_, err = applyWithCommitHook(plan, func(path string) error {
 		if path == target {
@@ -129,8 +129,8 @@ func TestApplyFailsClosedWhenDestinationAppearsDuringCommit(t *testing.T) {
 	})
 	require.Equal(t, contract.IOFailure, contract.CodeOf(err))
 	require.Equal(t, "concurrent", mustReadInternal(t, target))
-	require.NoFileExists(t, filepath.Join(root, ".ios-debug.toml"))
-	require.NoDirExists(t, filepath.Join(root, "DebugTools", "IOSDebugKit"))
+	require.NoFileExists(t, filepath.Join(root, ".ap-ios-debug.toml"))
+	require.NoDirExists(t, filepath.Join(root, "DebugTools", "ap-ios-debug-kit"))
 }
 
 func mustReadInternal(t *testing.T, path string) string {

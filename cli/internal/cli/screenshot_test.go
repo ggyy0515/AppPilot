@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ios-debug-system/cli/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
 )
 
 type screenshotTransport struct {
@@ -80,7 +80,7 @@ func TestScreenshotCaptureWritesVerifiedPrivateArtifactAndUSBJSON(t *testing.T) 
 	require.Empty(t, stderr)
 	absolute, err := filepath.Abs(output)
 	require.NoError(t, err)
-	requireScreenshotJSON(t, stdout, absolute, len(payload), screenshotSHA(payload), "drawHierarchy", 1, 1, 2, []string{"ios-debug --json state get --device usb-1"})
+	requireScreenshotJSON(t, stdout, absolute, len(payload), screenshotSHA(payload), "drawHierarchy", 1, 1, 2, []string{"ap-ios-debug --json state get --device usb-1"})
 	stat, err := os.Stat(output)
 	require.NoError(t, err)
 	require.Equal(t, os.FileMode(0o600), stat.Mode().Perm())
@@ -100,7 +100,7 @@ func TestScreenshotCaptureUsesDefaultUTCPathAndTCPNextCommand(t *testing.T) {
 	require.Equal(t, 0, code)
 	require.Empty(t, stderr)
 	expected := filepath.Join(outputDir, "20260714T000910.123000000Z", "screenshot.png")
-	requireScreenshotJSON(t, stdout, expected, len(payload), screenshotSHA(payload), "drawHierarchy", 1, 1, 2, []string{"ios-debug --json state get --transport tcp --tcp-host 127.0.0.1"})
+	requireScreenshotJSON(t, stdout, expected, len(payload), screenshotSHA(payload), "drawHierarchy", 1, 1, 2, []string{"ap-ios-debug --json state get --transport tcp --tcp-host 127.0.0.1"})
 }
 
 func TestScreenshotCaptureRemovesOutputForShortBody(t *testing.T) {
@@ -211,7 +211,7 @@ func requireScreenshotJSON(t *testing.T, raw, path string, bytes int, sha, metho
 
 func screenshotTemps(t *testing.T, directory string) []string {
 	t.Helper()
-	matches, err := filepath.Glob(filepath.Join(directory, ".ios-debug-*"))
+	matches, err := filepath.Glob(filepath.Join(directory, ".ap-ios-debug-*"))
 	require.NoError(t, err)
 	return matches
 }

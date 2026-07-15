@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/yangy003/ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
 )
 
 const (
@@ -31,14 +31,14 @@ func Load(ctx context.Context, options LoadOptions) (Config, error) {
 
 	result := Config{
 		Port:       defaultPort,
-		OutputDir:  filepath.Join(workingDir, ".ios-debug", "artifacts"),
+		OutputDir:  filepath.Join(workingDir, ".ap-ios-debug", "artifacts"),
 		Transport:  defaultTransport,
 		TCPHost:    defaultTCPHost,
 		WorkingDir: workingDir,
 	}
 	tcpHostSet := false
 
-	userPath := filepath.Join(userHome, ".ios-debug", "config.toml")
+	userPath := filepath.Join(userHome, ".ap-ios-debug", "config.toml")
 	user, exists, err := loadFile(userPath)
 	if err != nil {
 		return Config{}, err
@@ -49,7 +49,7 @@ func Load(ctx context.Context, options LoadOptions) (Config, error) {
 		}
 	}
 
-	projectPath := filepath.Join(workingDir, ".ios-debug.toml")
+	projectPath := filepath.Join(workingDir, ".ap-ios-debug.toml")
 	project, exists, err := loadFile(projectPath)
 	if err != nil {
 		return Config{}, err
@@ -64,26 +64,26 @@ func Load(ctx context.Context, options LoadOptions) (Config, error) {
 	if lookupEnv == nil {
 		lookupEnv = os.LookupEnv
 	}
-	if value, ok := lookupEnv("IOS_DEBUG_DEVICE"); ok {
+	if value, ok := lookupEnv("AP_IOS_DEBUG_DEVICE"); ok {
 		if value == "" {
 			return Config{}, invalid(errors.New("device identifier cannot be empty"))
 		}
 		result.DeviceID = value
 	}
-	if value, ok := lookupEnv("IOS_DEBUG_PORT"); ok {
+	if value, ok := lookupEnv("AP_IOS_DEBUG_PORT"); ok {
 		port, parseErr := strconv.ParseUint(value, 10, 16)
 		if parseErr != nil || port == 0 {
-			return Config{}, invalid(errors.New("IOS_DEBUG_PORT must be between 1 and 65535"))
+			return Config{}, invalid(errors.New("AP_IOS_DEBUG_PORT must be between 1 and 65535"))
 		}
 		result.Port = uint16(port)
 	}
-	if value, ok := lookupEnv("IOS_DEBUG_OUTPUT_DIR"); ok {
+	if value, ok := lookupEnv("AP_IOS_DEBUG_OUTPUT_DIR"); ok {
 		if value == "" {
 			return Config{}, invalid(errors.New("output directory cannot be empty"))
 		}
 		result.OutputDir = resolvePath(workingDir, value)
 	}
-	if value, ok := lookupEnv("IOS_DEBUG_TOKEN"); ok {
+	if value, ok := lookupEnv("AP_IOS_DEBUG_TOKEN"); ok {
 		result.Token = value
 	}
 

@@ -1,4 +1,4 @@
-module github.com/yangy003/ios-debug-system/cli
+module github.com/yangy003/ap-ios-debug-system/cli
 
 go 1.26.2
 
