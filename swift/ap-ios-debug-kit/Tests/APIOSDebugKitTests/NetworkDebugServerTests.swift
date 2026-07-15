@@ -287,7 +287,7 @@ private struct TestHTTPClient: Sendable {
             port: NWEndpoint.Port(rawValue: port)!,
             using: .tcp
         )
-        connection.start(queue: DispatchQueue(label: "ios-debug-tests.client"))
+        connection.start(queue: DispatchQueue(label: "ap-ios-debug-tests.client"))
         defer { connection.cancel() }
 
         for fragment in fragments {
@@ -367,7 +367,7 @@ private final class TestOpenConnection: @unchecked Sendable {
     }
 
     func start() {
-        connection.start(queue: DispatchQueue(label: "ios-debug-tests.partial-client"))
+        connection.start(queue: DispatchQueue(label: "ap-ios-debug-tests.partial-client"))
     }
 
     func send(_ data: Data) async throws {

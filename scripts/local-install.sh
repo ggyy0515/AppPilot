@@ -71,7 +71,6 @@ prefix="$(require_safe_root PREFIX "$prefix_input")"
 codex_home="$(require_safe_root CODEX_HOME "$codex_home_input")"
 reject_child_symlinks "$prefix" bin
 reject_child_symlinks "$prefix" share ap-ios-debug
-reject_child_symlinks "$prefix" share ios-debug
 reject_child_symlinks "$codex_home" skills
 
 bin_parent="$prefix/bin"
@@ -80,9 +79,10 @@ skills_root="$codex_home/skills"
 binary_install="$bin_parent/ap-ios-debug"
 package_install="$share_root/ap-ios-debug-kit"
 skill_install="$skills_root/ap-ios-debug-skill"
-legacy_binary="$bin_parent/ios-debug"
+legacy_binary="$prefix/bin/ios-debug"
 legacy_package="$prefix/share/ios-debug/IOSDebugKit"
-legacy_skill="$skills_root/sx-ios-debug"
+legacy_skill="$codex_home/skills/sx-ios-debug"
+reject_symlink "$(dirname "$legacy_package")"
 reject_symlink "$binary_install"
 reject_symlink "$package_install"
 reject_symlink "$skill_install"
@@ -259,19 +259,19 @@ if [[ -e "$skill_install" ]]; then
   "$mv_bin" -- "$skill_install" "$skill_backup"
 fi
 if [[ -e "$legacy_binary" ]]; then
-  legacy_binary_backup="$(mktemp "$bin_parent/.ios-debug.bin.backup.XXXXXX")"
+  legacy_binary_backup="$(mktemp "$bin_parent/.ap-ios-debug.legacy-bin.backup.XXXXXX")"
   rm -f -- "$legacy_binary_backup"
   legacy_binary_backup_intent=1
   "$mv_bin" -- "$legacy_binary" "$legacy_binary_backup"
 fi
 if [[ -e "$legacy_package" ]]; then
-  legacy_package_backup="$(mktemp -d "$prefix/share/ios-debug/.IOSDebugKit.backup.XXXXXX")"
+  legacy_package_backup="$(mktemp -d "$share_root/.ap-ios-debug-kit.legacy-package.backup.XXXXXX")"
   rmdir "$legacy_package_backup"
   legacy_package_backup_intent=1
   "$mv_bin" -- "$legacy_package" "$legacy_package_backup"
 fi
 if [[ -e "$legacy_skill" ]]; then
-  legacy_skill_backup="$(mktemp -d "$skills_root/.sx-ios-debug.backup.XXXXXX")"
+  legacy_skill_backup="$(mktemp -d "$skills_root/.ap-ios-debug-skill.legacy-skill.backup.XXXXXX")"
   rmdir "$legacy_skill_backup"
   legacy_skill_backup_intent=1
   "$mv_bin" -- "$legacy_skill" "$legacy_skill_backup"

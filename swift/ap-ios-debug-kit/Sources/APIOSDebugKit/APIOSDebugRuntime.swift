@@ -25,7 +25,7 @@ import UIKit
                 throw ProtocolError(
                     code: AppErrorCode.configInvalid.rawValue,
                     message: "Bearer token is empty.",
-                    hint: "Unset IOS_DEBUG_TOKEN or provide a nonempty value."
+                    hint: "Unset AP_IOS_DEBUG_TOKEN or provide a nonempty value."
                 )
             }
             guard maximumRecordingDuration > .zero, maximumRecordingDuration <= .seconds(600) else {
@@ -291,7 +291,7 @@ private enum RouteRegistrar {
                 "reachable": .bool(true),
             ]
             if context.configuration.bearerToken == nil {
-                data["service"] = .string("ios-debug")
+                data["service"] = .string("ap-ios-debug")
                 data["app_bundle_identifier"] = .string(Bundle.main.bundleIdentifier ?? "")
                 data["app_version"] = .string(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
             }

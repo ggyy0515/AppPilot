@@ -10,7 +10,7 @@ import Testing
     let url = packageRoot.appending(path: "Templates/APIOSDebugBootstrap.swift")
     let bytes = try Data(contentsOf: url)
     let text = String(decoding: bytes, as: UTF8.self)
-    #expect(SHA256.hexDigest(bytes) == "25b18c5af01a33b4cad50d5905174f0c55119db074922f0473f332ffe553524f")
+    #expect(SHA256.hexDigest(bytes) == "77100ba7f6fde0eb74925f6824f7685294936d883164ef7faa15d5d2778849cc")
     #expect(bytes.count > 1)
     #expect(bytes.last == 0x0a)
     #expect(bytes.dropLast().last != 0x0a)
@@ -18,7 +18,7 @@ import Testing
     #expect(text.hasPrefix("#if DEBUG\n"))
     #expect(text.contains("static func start() async throws {"))
     #expect(text.contains("static func stop() async {"))
-    #expect(text.contains("ProcessInfo.processInfo.environment[\"IOS_DEBUG_TOKEN\"]"))
+    #expect(text.contains("ProcessInfo.processInfo.environment[\"AP_IOS_DEBUG_TOKEN\"]"))
 }
 
 #if os(macOS)

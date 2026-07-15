@@ -144,19 +144,6 @@ if reject_extended 'product only to (the )?.*Debug configuration' "$root/docs/in
     echo "FAIL: docs prescribe unsupported configuration-scoped package linking" >&2
     exit 1
 fi
-for legacy_pattern in \
-    '(^|[^[:alnum:]-])ios-debug' \
-    '(^|[^[:alnum:]])sx-ios-debug' \
-    '(^|[^[:alnum:]])IOSDebug' \
-    '(^|[^[:alnum:]_])IOS_DEBUG' \
-    '(^|[^[:alnum:]])\.ios-debug' \
-    '(^|[^[:alnum:]])DebugDemo'; do
-    if reject_extended "$legacy_pattern" "${legacy_scan_files[@]}"; then
-        echo "FAIL: docs expose a legacy AppPilot name matching '$legacy_pattern'" >&2
-        exit 1
-    fi
-done
-
 for required_text in \
     'Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj' \
     'ap-ios-debug-demo.xcscheme' \

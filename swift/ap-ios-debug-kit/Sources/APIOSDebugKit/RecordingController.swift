@@ -76,7 +76,7 @@ public actor RecordingController {
         source = ReplayKitCaptureSource()
         writerFactory = { RecordingWriter(outputURL: $0) }
         clock = ContinuousRecordingClock()
-        storeURL = FileManager.default.temporaryDirectory.appendingPathComponent("ios-debug-recordings", isDirectory: true)
+        storeURL = FileManager.default.temporaryDirectory.appendingPathComponent("ap-ios-debug-recordings", isDirectory: true)
     }
 
     init(

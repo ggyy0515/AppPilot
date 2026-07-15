@@ -42,7 +42,7 @@ public actor NetworkDebugServer {
 
     private let router: HTTPRouter
     private let listener: any NetworkListenerDriving
-    private let queue = DispatchQueue(label: "ios-debug.server")
+    private let queue = DispatchQueue(label: "ap-ios-debug.server")
     private var lifecycle = Lifecycle.idle
     private var generation: UInt64 = 0
     private var startContinuations: [CheckedContinuation<Void, any Error>] = []

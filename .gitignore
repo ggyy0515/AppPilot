@@ -1,7 +1,6 @@
 .worktrees/
 .superpowers/
 /build/
-/.ios-debug/
 **/.build/
 **/.swiftpm/
 **/DerivedData/

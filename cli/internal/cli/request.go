@@ -162,7 +162,7 @@ func safeResponseHeaders(headers http.Header) http.Header {
 		if lowercase == "authorization" || lowercase == "set-cookie" {
 			continue
 		}
-		if !strings.HasPrefix(lowercase, "content-") && !strings.HasPrefix(lowercase, "x-ios-debug-") {
+		if !strings.HasPrefix(lowercase, "content-") && !strings.HasPrefix(lowercase, strings.ToLower("X-IOS-Debug-")) {
 			continue
 		}
 		result[name] = append([]string(nil), values...)

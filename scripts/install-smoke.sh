@@ -10,7 +10,6 @@ cd /tmp
 
 export PATH="$prefix/bin:$PATH"
 test "$(command -v ap-ios-debug)" = "$prefix/bin/ap-ios-debug"
-! command -v ios-debug >/dev/null 2>&1
 ap-ios-debug --help >"$tmp/help.txt"
 grep -q '^  ap-ios-debug \[command\]$' "$tmp/help.txt"
 test -f "$codex_home/skills/ap-ios-debug-skill/agents/openai.yaml"

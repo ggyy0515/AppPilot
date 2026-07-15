@@ -17,7 +17,13 @@ SHARE_ROOT := $(PREFIX)/share/ap-ios-debug
 PACKAGE_INSTALL := $(SHARE_ROOT)/ap-ios-debug-kit
 SKILL_INSTALL := $(CODEX_HOME)/skills/ap-ios-debug-skill
 
-.PHONY: swift-format-config-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
+.PHONY: check-ap-ios-names check-ap-ios-names-test swift-format-config-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
+
+check-ap-ios-names:
+	@./scripts/check-ap-ios-names.sh
+
+check-ap-ios-names-test:
+	@./scripts/tests/check-ap-ios-names-test.sh
 
 swift-format-config-test:
 	@./scripts/tests/swift-format-config-test.sh
@@ -104,26 +110,15 @@ install-smoke-isolated: local-install-safety-test
 	trap 'chmod -R u+w "$$tmp" 2>/dev/null || true; rm -rf -- "$$tmp"' EXIT; \
 	gomodcache="$$(go env GOMODCACHE)"; \
 	gocache="$$(go env GOCACHE)"; \
-	mkdir -p "$$tmp/home/.local/bin" "$$tmp/home/.local/share" \
-		"$$tmp/home/.local/share/ios-debug/IOSDebugKit" \
-		"$$tmp/home/.codex/skills/sx-ios-debug" \
-		"$$tmp/Project/.ios-debug/artifacts" "$$tmp/Project/.ap-ios-debug/artifacts"; \
-	printf '#!/bin/sh\nexit 0\n' >"$$tmp/home/.local/bin/ios-debug"; \
-	chmod 0755 "$$tmp/home/.local/bin/ios-debug"; \
-	printf 'legacy-package\n' >"$$tmp/home/.local/share/ios-debug/IOSDebugKit/version"; \
-	printf 'legacy-skill\n' >"$$tmp/home/.codex/skills/sx-ios-debug/version"; \
+	mkdir -p "$$tmp/home/.local/bin" "$$tmp/home/.local/share" "$$tmp/home/.codex/skills" \
+		"$$tmp/Project/.ap-ios-debug/artifacts"; \
 	printf 'unrelated-bin\n' >"$$tmp/home/.local/bin/unrelated"; \
 	printf 'unrelated-share\n' >"$$tmp/home/.local/share/unrelated"; \
 	printf 'unrelated-skill\n' >"$$tmp/home/.codex/skills/unrelated"; \
-	printf 'legacy-user-data\n' >"$$tmp/Project/.ios-debug.toml"; \
-	printf 'legacy-artifact\n' >"$$tmp/Project/.ios-debug/artifacts/keep.txt"; \
 	printf 'user-data\n' >"$$tmp/Project/.ap-ios-debug.toml"; \
 	printf 'artifact\n' >"$$tmp/Project/.ap-ios-debug/artifacts/keep.txt"; \
 	HOME="$$tmp/home" GOMODCACHE="$$gomodcache" GOCACHE="$$gocache" $(MAKE) install-local \
 		PREFIX="$$tmp/home/.local" CODEX_HOME="$$tmp/home/.codex"; \
-	test ! -e "$$tmp/home/.local/bin/ios-debug"; \
-	test ! -e "$$tmp/home/.local/share/ios-debug/IOSDebugKit"; \
-	test ! -e "$$tmp/home/.codex/skills/sx-ios-debug"; \
 	HOME="$$tmp/home" GOMODCACHE="$$gomodcache" GOCACHE="$$gocache" $(MAKE) uninstall-local \
 		PREFIX="$$tmp/home/.local" CODEX_HOME="$$tmp/home/.codex"; \
 	test ! -e "$$tmp/home/.local/bin/ap-ios-debug"; \
@@ -132,13 +127,11 @@ install-smoke-isolated: local-install-safety-test
 	test -f "$$tmp/home/.local/bin/unrelated"; \
 	test -f "$$tmp/home/.local/share/unrelated"; \
 	test -f "$$tmp/home/.codex/skills/unrelated"; \
-	test -f "$$tmp/Project/.ios-debug.toml"; \
-	test -f "$$tmp/Project/.ios-debug/artifacts/keep.txt"; \
 	test -f "$$tmp/Project/.ap-ios-debug.toml"; \
 	test -f "$$tmp/Project/.ap-ios-debug/artifacts/keep.txt"; \
 	echo "PASS: install-uninstall-isolated"
 
-verify: fmt-check go-vet go-test swift-test build-cli scaffold-smoke \
+verify: check-ap-ios-names check-ap-ios-names-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke \
 	demo-test demo-debug demo-release simulator-e2e release-scan \
 	validate-skill check-docs install-smoke-isolated device-smoke
 	@echo "PASS: make verify"

@@ -54,8 +54,8 @@ import Testing
         let wrong = authenticator.authorize(request(.get, "/v1/state", headers: ["authorization": "Bearer supplied-secret"]), isHealth: false)
         let malformed = authenticator.authorize(request(.get, "/v1/state", headers: ["authorization": "bearer correct-secret"]), isHealth: false)
         let correct = authenticator.authorize(request(.get, "/v1/state", headers: ["authorization": "Bearer correct-secret"]), isHealth: false)
-        #expect(missing == .init(code: "auth_required", message: "Authentication is required.", hint: "Set IOS_DEBUG_TOKEN to the App's configured token."))
-        #expect(wrong == .init(code: "auth_failed", message: "Authentication failed.", hint: "Verify IOS_DEBUG_TOKEN and retry without printing the token."))
+        #expect(missing == .init(code: "auth_required", message: "Authentication is required.", hint: "Set AP_IOS_DEBUG_TOKEN to the App's configured token."))
+        #expect(wrong == .init(code: "auth_failed", message: "Authentication failed.", hint: "Verify AP_IOS_DEBUG_TOKEN and retry without printing the token."))
         #expect(malformed?.code == "auth_failed")
         #expect(correct == nil)
     }

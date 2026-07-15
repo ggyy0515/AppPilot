@@ -48,7 +48,7 @@ enum APIOSDebugBootstrap {
             case .stopped:
                 let task = Task { @MainActor in
                     let configuration = try APIOSDebugRuntime.Configuration(
-                        bearerToken: ProcessInfo.processInfo.environment["IOS_DEBUG_TOKEN"]
+                        bearerToken: ProcessInfo.processInfo.environment["AP_IOS_DEBUG_TOKEN"]
                     )
                     let instance = APIOSDebugRuntime(configuration: configuration, stateProvider: stateProvider)
                     try await instance.start()

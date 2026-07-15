@@ -61,12 +61,16 @@ public struct BearerAuthenticator: Sendable {
         guard !isHealth, let token else { return nil }
         guard let value = request.headers["authorization"] else {
             return .init(
-                code: AppErrorCode.authRequired.rawValue, message: "Authentication is required.", hint: "Set IOS_DEBUG_TOKEN to the App's configured token.")
+                code: AppErrorCode.authRequired.rawValue,
+                message: "Authentication is required.",
+                hint: "Set AP_IOS_DEBUG_TOKEN to the App's configured token.")
         }
         let prefix = "Bearer "
         guard value.hasPrefix(prefix), constantTimeEqual(Data(value.dropFirst(prefix.count).utf8), token) else {
             return .init(
-                code: AppErrorCode.authFailed.rawValue, message: "Authentication failed.", hint: "Verify IOS_DEBUG_TOKEN and retry without printing the token.")
+                code: AppErrorCode.authFailed.rawValue,
+                message: "Authentication failed.",
+                hint: "Verify AP_IOS_DEBUG_TOKEN and retry without printing the token.")
         }
         return nil
     }

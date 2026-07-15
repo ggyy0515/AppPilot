@@ -333,7 +333,7 @@ extension JSONValue {
         keys(try json(trustedHostHealth), at: "data") == [
             "service", "app_bundle_identifier", "app_version", "protocol_version", "auth_required", "reachable",
         ])
-    #expect(try json(trustedHostHealth).value(at: "data.service") == .string("ios-debug"))
+    #expect(try json(trustedHostHealth).value(at: "data.service") == .string("ap-ios-debug"))
     #expect(try json(trustedHostHealth).value(at: "data.auth_required") == .bool(false))
     #expect(try json(trustedHostHealth).value(at: "data.reachable") == .bool(true))
 
