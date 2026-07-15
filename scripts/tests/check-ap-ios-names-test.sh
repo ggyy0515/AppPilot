@@ -32,11 +32,27 @@ done
 wire_header="$tmp/wire-header.txt"
 printf '%s\n' 'keep headers beginning with x-ios-debug-protocol-version' >"$wire_header"
 "$checker" --scan-only "$wire_header" >/dev/null
+printf '%s\n' 'X-IOS-Debug-Protocol-Version' >"$wire_header"
+"$checker" --scan-only "$wire_header" >/dev/null
 printf '%s\n' 'x-ios-debug is not a complete frozen header name' >"$wire_header"
 if "$checker" --scan-only "$wire_header" >/dev/null 2>&1; then
   echo 'FAIL: wire-protocol exception accepted a non-header legacy name' >&2
   exit 1
 fi
+uppercase_non_headers=('X-IOS-Debug' 'X-IOS-Debug-' 'X-IOS-Debugger' 'IOS-Debug')
+for value in "${uppercase_non_headers[@]}"; do
+  printf '%s\n' "$value" >"$wire_header"
+  uppercase_status=0
+  "$checker" --scan-only "$wire_header" >/dev/null 2>&1 || uppercase_status=$?
+  if [[ "$uppercase_status" -eq 0 ]]; then
+    echo "FAIL: wire-protocol exception accepted uppercase non-header $value" >&2
+    exit 1
+  fi
+  if [[ "$uppercase_status" -ne 1 ]]; then
+    echo "FAIL: uppercase non-header $value returned $uppercase_status, expected 1" >&2
+    exit 1
+  fi
+done
 
 cli_plan="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
 if rg -q 'x-''ap-ios-debug-' "$cli_plan"; then

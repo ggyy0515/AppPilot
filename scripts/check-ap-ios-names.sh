@@ -7,8 +7,9 @@ root="$(pwd -P)"
 failures=0
 legacy_patterns=(
   'sx-ios-debug'
-  # Preserve only the frozen lowercase wire-header namespace x-ios-debug-<field>.
-  '(?<!ap-)(?<!x-)ios-debug|x-ios-debug(?!-)'
+  # Preserve frozen wire headers; the bare quoted lowercase prefix is documentation only.
+  '(?<!ap-)(?<!x-)ios-debug|x-ios-debug(?!(?:-[a-z0-9][a-z0-9-]*|-(?=`)))'
+  '(?<!X-)IOS-Debug|X-IOS-Debug(?!(?:-[A-Za-z0-9][A-Za-z0-9-]*|-(?=")))'
   '(?<!AP)IOSDebug'
   '(?<!AP_)IOS_DEBUG'
   '(?<!\.ap)\.ios-debug'
