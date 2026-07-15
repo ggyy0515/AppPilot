@@ -62,6 +62,27 @@ for value in "${uppercase_non_headers[@]}"; do
   fi
 done
 
+canonical_prefix_case_variants=(
+  'ap-IOS-Debug'
+  'ap-Ios-Debug'
+  'ap-iOS-debug'
+  'ap-ios-Debug'
+  'ap-ios-DEBUG'
+)
+for value in "${canonical_prefix_case_variants[@]}"; do
+  printf '%s\n' "$value" >"$wire_header"
+  variant_status=0
+  "$checker" --scan-only "$wire_header" >/dev/null 2>&1 || variant_status=$?
+  if [[ "$variant_status" -eq 0 ]]; then
+    echo "FAIL: canonical prefix accepted noncanonical case $value" >&2
+    exit 1
+  fi
+  if [[ "$variant_status" -ne 1 ]]; then
+    echo "FAIL: noncanonical case $value returned $variant_status, expected 1" >&2
+    exit 1
+  fi
+done
+
 cli_plan="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
 if rg -q 'x-''ap-ios-debug-' "$cli_plan"; then
   echo 'FAIL: CLI plan renamed a frozen wire header prefix' >&2
