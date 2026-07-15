@@ -24,6 +24,8 @@ run_installer() {
     PACKAGE_SOURCE="$tmp/source/package" \
     SKILL_SOURCE="${3:-$tmp/source/skill}" \
     DITTO_BIN="${DITTO_BIN:-/usr/bin/ditto}" \
+    MV_BIN="${MV_BIN:-/bin/mv}" \
+    RM_BIN="${RM_BIN:-/bin/rm}" \
     "$installer" "${4:-install}"
 }
 
@@ -95,6 +97,96 @@ test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
 test "$(cat "$prefix/bin/ios-debug")" = legacy-bin
 test "$(cat "$prefix/share/ios-debug/IOSDebugKit/version")" = legacy-package
 test "$(cat "$codex_home/skills/sx-ios-debug/version")" = legacy-skill
+
+printf '%s\n' '#!/bin/bash' 'set -eu' \
+  'count=0; [[ -f "$MV_COUNT" ]] && count="$(cat "$MV_COUNT")"' \
+  'count=$((count + 1)); printf "%s\n" "$count" >"$MV_COUNT"' \
+  '/bin/mv "$@"' \
+  'if [[ "$count" -eq "$MV_TERM_AFTER" ]]; then kill -TERM "$PPID"; fi' \
+  >"$tmp/term-after-mv"
+chmod 0755 "$tmp/term-after-mv"
+
+for term_after in 1 2 3 4 5 6 7 8 9; do
+  signal_root="$tmp/signal-$term_after"
+  signal_prefix="$signal_root/prefix"
+  signal_codex="$signal_root/codex"
+  mkdir -p "$signal_prefix/bin" \
+    "$signal_prefix/share/ap-ios-debug/ap-ios-debug-kit" \
+    "$signal_prefix/share/ios-debug/IOSDebugKit" \
+    "$signal_codex/skills/ap-ios-debug-skill" \
+    "$signal_codex/skills/sx-ios-debug"
+  printf 'old-binary-%s\n' "$term_after" >"$signal_prefix/bin/ap-ios-debug"
+  printf 'old-package-%s\n' "$term_after" \
+    >"$signal_prefix/share/ap-ios-debug/ap-ios-debug-kit/version"
+  printf 'old-skill-%s\n' "$term_after" \
+    >"$signal_codex/skills/ap-ios-debug-skill/version"
+  printf 'legacy-bin-%s\n' "$term_after" >"$signal_prefix/bin/ios-debug"
+  printf 'legacy-package-%s\n' "$term_after" \
+    >"$signal_prefix/share/ios-debug/IOSDebugKit/version"
+  printf 'legacy-skill-%s\n' "$term_after" \
+    >"$signal_codex/skills/sx-ios-debug/version"
+  export MV_BIN="$tmp/term-after-mv"
+  export MV_COUNT="$signal_root/mv-count"
+  export MV_TERM_AFTER="$term_after"
+  signal_status=0
+  run_installer "$signal_prefix" "$signal_codex" || signal_status=$?
+  if [[ "$signal_status" -ne 143 ]]; then
+    echo "FAIL: TERM after move $term_after returned $signal_status, expected 143" >&2
+    exit 1
+  fi
+  unset MV_BIN MV_COUNT MV_TERM_AFTER
+  test "$(cat "$signal_prefix/bin/ap-ios-debug")" = "old-binary-$term_after"
+  test "$(cat "$signal_prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" \
+    = "old-package-$term_after"
+  test "$(cat "$signal_codex/skills/ap-ios-debug-skill/version")" \
+    = "old-skill-$term_after"
+  test "$(cat "$signal_prefix/bin/ios-debug")" = "legacy-bin-$term_after"
+  test "$(cat "$signal_prefix/share/ios-debug/IOSDebugKit/version")" \
+    = "legacy-package-$term_after"
+  test "$(cat "$signal_codex/skills/sx-ios-debug/version")" \
+    = "legacy-skill-$term_after"
+  test -z "$(find "$signal_prefix" "$signal_codex" \
+    \( -name '*.stage.*' -o -name '*.backup.*' \) -print)"
+done
+
+printf '%s\n' '#!/bin/bash' 'set -eu' \
+  'for argument in "$@"; do' \
+  '  case "$argument" in *.backup.*) echo "injected backup rm failure" >&2; exit 9 ;; esac' \
+  'done' \
+  'exec /bin/rm "$@"' >"$tmp/failing-backup-rm"
+chmod 0755 "$tmp/failing-backup-rm"
+cleanup_root="$tmp/post-commit-cleanup"
+cleanup_prefix="$cleanup_root/prefix"
+cleanup_codex="$cleanup_root/codex"
+mkdir -p "$cleanup_prefix/bin" \
+  "$cleanup_prefix/share/ap-ios-debug/ap-ios-debug-kit" \
+  "$cleanup_prefix/share/ios-debug/IOSDebugKit" \
+  "$cleanup_codex/skills/ap-ios-debug-skill" \
+  "$cleanup_codex/skills/sx-ios-debug"
+printf 'old-binary\n' >"$cleanup_prefix/bin/ap-ios-debug"
+printf 'old-package\n' >"$cleanup_prefix/share/ap-ios-debug/ap-ios-debug-kit/version"
+printf 'old-skill\n' >"$cleanup_codex/skills/ap-ios-debug-skill/version"
+printf 'legacy-bin\n' >"$cleanup_prefix/bin/ios-debug"
+printf 'legacy-package\n' >"$cleanup_prefix/share/ios-debug/IOSDebugKit/version"
+printf 'legacy-skill\n' >"$cleanup_codex/skills/sx-ios-debug/version"
+export RM_BIN="$tmp/failing-backup-rm"
+if ! run_installer "$cleanup_prefix" "$cleanup_codex" 2>"$cleanup_root/stderr"; then
+  echo 'FAIL: committed install failed when backup cleanup failed' >&2
+  exit 1
+fi
+unset RM_BIN
+cmp "$tmp/source/ap-ios-debug" "$cleanup_prefix/bin/ap-ios-debug"
+test -f "$cleanup_prefix/share/ap-ios-debug/ap-ios-debug-kit/Templates/APIOSDebugBootstrap.swift"
+test -f "$cleanup_codex/skills/ap-ios-debug-skill/SKILL.md"
+test ! -e "$cleanup_prefix/bin/ios-debug"
+test ! -e "$cleanup_prefix/share/ios-debug/IOSDebugKit"
+test ! -e "$cleanup_codex/skills/sx-ios-debug"
+test -z "$(find "$cleanup_prefix" "$cleanup_codex" -name '*.stage.*' -print)"
+if ! grep -q '^WARNING: unable to remove backup:' "$cleanup_root/stderr"; then
+  echo 'FAIL: committed backup cleanup failure was not reported' >&2
+  exit 1
+fi
+test -n "$(find "$cleanup_prefix" "$cleanup_codex" -name '*.backup.*' -print)"
 
 printf 'legacy-bin-sibling\n' >"$prefix/bin/ios-debug-helper"
 printf 'legacy-share-sibling\n' >"$prefix/share/ios-debug/unrelated"

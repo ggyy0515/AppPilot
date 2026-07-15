@@ -27,6 +27,10 @@ reject_symlink() {
   [[ ! -L "$path" ]] || fail "refusing symlink path: $path"
 }
 
+path_exists() {
+  [[ -e "$1" || -L "$1" ]]
+}
+
 reject_child_symlinks() {
   local root="$1"
   shift
@@ -41,22 +45,22 @@ reject_child_symlinks() {
 remove_stage_dir() {
   local path="$1"
   [[ -n "$path" && "$path" != / && ! -L "$path" ]] || return 0
-  rm -rf -- "$path"
+  "$rm_bin" -rf -- "$path"
 }
 
 remove_stage_file() {
   local path="$1"
   [[ -n "$path" && "$path" != / && ! -L "$path" ]] || return 0
-  rm -f -- "$path"
+  "$rm_bin" -f -- "$path"
 }
 
 remove_staged_generated_entry() {
   local path="$1"
   [[ -n "$path" && "$path" != / ]] || return 0
   if [[ -L "$path" ]]; then
-    rm -f -- "$path"
+    "$rm_bin" -f -- "$path"
   elif [[ -e "$path" ]]; then
-    rm -rf -- "$path"
+    "$rm_bin" -rf -- "$path"
   fi
 }
 
@@ -102,9 +106,13 @@ binary_source="${AP_IOS_DEBUG_BIN:-}"
 package_source="${PACKAGE_SOURCE:-}"
 skill_source="${SKILL_SOURCE:-}"
 ditto_bin="${DITTO_BIN:-/usr/bin/ditto}"
+mv_bin="${MV_BIN:-/bin/mv}"
+rm_bin="${RM_BIN:-/bin/rm}"
 [[ -f "$binary_source" && -x "$binary_source" ]] || \
   fail "missing executable AP_IOS_DEBUG_BIN: $binary_source"
 [[ -x "$ditto_bin" ]] || fail "missing executable DITTO_BIN: $ditto_bin"
+[[ -x "$mv_bin" ]] || fail "missing executable MV_BIN: $mv_bin"
+[[ -x "$rm_bin" ]] || fail "missing executable RM_BIN: $rm_bin"
 [[ -d "$package_source" ]] || fail "missing PACKAGE_SOURCE: $package_source"
 [[ -f "$package_source/Package.swift" || -f "$package_source/Templates/APIOSDebugBootstrap.swift" ]] || \
   fail "PACKAGE_SOURCE is not APIOSDebugKit: $package_source"
@@ -141,43 +149,85 @@ skill_backup=""
 legacy_binary_backup=""
 legacy_package_backup=""
 legacy_skill_backup=""
-binary_saved=0
-package_saved=0
-skill_saved=0
-legacy_binary_saved=0
-legacy_package_saved=0
-legacy_skill_saved=0
-binary_placed=0
-package_placed=0
-skill_placed=0
+binary_backup_intent=0
+package_backup_intent=0
+skill_backup_intent=0
+legacy_binary_backup_intent=0
+legacy_package_backup_intent=0
+legacy_skill_backup_intent=0
+binary_place_intent=0
+package_place_intent=0
+skill_place_intent=0
 committed=0
+
+restore_backup() {
+  local backup="$1"
+  local destination="$2"
+  if path_exists "$backup" && ! path_exists "$destination"; then
+    "$mv_bin" -- "$backup" "$destination"
+  fi
+}
+
+remove_committed_backup_file() {
+  local label="$1"
+  local path="$2"
+  if ! remove_stage_file "$path"; then
+    echo "WARNING: unable to remove backup: $label ($path)" >&2
+  fi
+}
+
+remove_committed_backup_dir() {
+  local label="$1"
+  local path="$2"
+  if ! remove_stage_dir "$path"; then
+    echo "WARNING: unable to remove backup: $label ($path)" >&2
+  fi
+}
 
 cleanup() {
   local status=$?
   trap - EXIT HUP INT TERM
   if [[ "$committed" -eq 0 ]]; then
-    if [[ "$skill_placed" -eq 1 ]]; then remove_stage_dir "$skill_install"; fi
-    if [[ "$package_placed" -eq 1 ]]; then remove_stage_dir "$package_install"; fi
-    if [[ "$binary_placed" -eq 1 ]]; then remove_stage_file "$binary_install"; fi
-    if [[ "$skill_saved" -eq 1 && ! -e "$skill_install" ]]; then mv -- "$skill_backup" "$skill_install"; skill_saved=0; fi
-    if [[ "$package_saved" -eq 1 && ! -e "$package_install" ]]; then mv -- "$package_backup" "$package_install"; package_saved=0; fi
-    if [[ "$binary_saved" -eq 1 && ! -e "$binary_install" ]]; then mv -- "$binary_backup" "$binary_install"; binary_saved=0; fi
-    if [[ "$legacy_skill_saved" -eq 1 && ! -e "$legacy_skill" ]]; then mv -- "$legacy_skill_backup" "$legacy_skill"; legacy_skill_saved=0; fi
-    if [[ "$legacy_package_saved" -eq 1 && ! -e "$legacy_package" ]]; then mv -- "$legacy_package_backup" "$legacy_package"; legacy_package_saved=0; fi
-    if [[ "$legacy_binary_saved" -eq 1 && ! -e "$legacy_binary" ]]; then mv -- "$legacy_binary_backup" "$legacy_binary"; legacy_binary_saved=0; fi
+    if [[ "$skill_place_intent" -eq 1 ]] && path_exists "$skill_install"; then remove_stage_dir "$skill_install"; fi
+    if [[ "$package_place_intent" -eq 1 ]] && path_exists "$package_install"; then remove_stage_dir "$package_install"; fi
+    if [[ "$binary_place_intent" -eq 1 ]] && path_exists "$binary_install"; then remove_stage_file "$binary_install"; fi
+    if [[ "$skill_backup_intent" -eq 1 ]]; then restore_backup "$skill_backup" "$skill_install"; fi
+    if [[ "$package_backup_intent" -eq 1 ]]; then restore_backup "$package_backup" "$package_install"; fi
+    if [[ "$binary_backup_intent" -eq 1 ]]; then restore_backup "$binary_backup" "$binary_install"; fi
+    if [[ "$legacy_skill_backup_intent" -eq 1 ]]; then restore_backup "$legacy_skill_backup" "$legacy_skill"; fi
+    if [[ "$legacy_package_backup_intent" -eq 1 ]]; then restore_backup "$legacy_package_backup" "$legacy_package"; fi
+    if [[ "$legacy_binary_backup_intent" -eq 1 ]]; then restore_backup "$legacy_binary_backup" "$legacy_binary"; fi
   fi
   remove_stage_file "$binary_stage"
   remove_stage_dir "$package_stage"
   remove_stage_dir "$skill_stage"
-  if [[ "$binary_saved" -eq 1 ]]; then remove_stage_file "$binary_backup"; fi
-  if [[ "$package_saved" -eq 1 ]]; then remove_stage_dir "$package_backup"; fi
-  if [[ "$skill_saved" -eq 1 ]]; then remove_stage_dir "$skill_backup"; fi
-  if [[ "$legacy_binary_saved" -eq 1 ]]; then remove_stage_file "$legacy_binary_backup"; fi
-  if [[ "$legacy_package_saved" -eq 1 ]]; then remove_stage_dir "$legacy_package_backup"; fi
-  if [[ "$legacy_skill_saved" -eq 1 ]]; then remove_stage_dir "$legacy_skill_backup"; fi
+  if [[ "$committed" -eq 1 ]]; then
+    remove_committed_backup_file "installed binary" "$binary_backup"
+    remove_committed_backup_dir "installed package" "$package_backup"
+    remove_committed_backup_dir "installed skill" "$skill_backup"
+    remove_committed_backup_file "legacy binary" "$legacy_binary_backup"
+    remove_committed_backup_dir "legacy package" "$legacy_package_backup"
+    remove_committed_backup_dir "legacy skill" "$legacy_skill_backup"
+  else
+    if [[ "$binary_backup_intent" -eq 0 ]]; then remove_stage_file "$binary_backup"; fi
+    if [[ "$package_backup_intent" -eq 0 ]]; then remove_stage_dir "$package_backup"; fi
+    if [[ "$skill_backup_intent" -eq 0 ]]; then remove_stage_dir "$skill_backup"; fi
+    if [[ "$legacy_binary_backup_intent" -eq 0 ]]; then remove_stage_file "$legacy_binary_backup"; fi
+    if [[ "$legacy_package_backup_intent" -eq 0 ]]; then remove_stage_dir "$legacy_package_backup"; fi
+    if [[ "$legacy_skill_backup_intent" -eq 0 ]]; then remove_stage_dir "$legacy_skill_backup"; fi
+  fi
   exit "$status"
 }
-trap cleanup EXIT HUP INT TERM
+
+on_signal() {
+  local signal="$1"
+  exit $((128 + signal))
+}
+
+trap cleanup EXIT
+trap 'on_signal 1' HUP
+trap 'on_signal 2' INT
+trap 'on_signal 15' TERM
 
 install -m 0755 "$binary_source" "$binary_stage"
 "$ditto_bin" "$package_source" "$package_stage"
@@ -193,51 +243,48 @@ remove_staged_generated_entry "$package_stage/.swiftpm"
 if [[ -e "$binary_install" ]]; then
   binary_backup="$(mktemp "$bin_parent/.ap-ios-debug.bin.backup.XXXXXX")"
   rm -f -- "$binary_backup"
-  mv -- "$binary_install" "$binary_backup"
-  binary_saved=1
+  binary_backup_intent=1
+  "$mv_bin" -- "$binary_install" "$binary_backup"
 fi
 if [[ -e "$package_install" ]]; then
   package_backup="$(mktemp -d "$share_root/.ap-ios-debug-kit.backup.XXXXXX")"
   rmdir "$package_backup"
-  mv -- "$package_install" "$package_backup"
-  package_saved=1
+  package_backup_intent=1
+  "$mv_bin" -- "$package_install" "$package_backup"
 fi
 if [[ -e "$skill_install" ]]; then
   skill_backup="$(mktemp -d "$skills_root/.ap-ios-debug-skill.backup.XXXXXX")"
   rmdir "$skill_backup"
-  mv -- "$skill_install" "$skill_backup"
-  skill_saved=1
+  skill_backup_intent=1
+  "$mv_bin" -- "$skill_install" "$skill_backup"
 fi
 if [[ -e "$legacy_binary" ]]; then
   legacy_binary_backup="$(mktemp "$bin_parent/.ios-debug.bin.backup.XXXXXX")"
   rm -f -- "$legacy_binary_backup"
-  mv -- "$legacy_binary" "$legacy_binary_backup"
-  legacy_binary_saved=1
+  legacy_binary_backup_intent=1
+  "$mv_bin" -- "$legacy_binary" "$legacy_binary_backup"
 fi
 if [[ -e "$legacy_package" ]]; then
   legacy_package_backup="$(mktemp -d "$prefix/share/ios-debug/.IOSDebugKit.backup.XXXXXX")"
   rmdir "$legacy_package_backup"
-  mv -- "$legacy_package" "$legacy_package_backup"
-  legacy_package_saved=1
+  legacy_package_backup_intent=1
+  "$mv_bin" -- "$legacy_package" "$legacy_package_backup"
 fi
 if [[ -e "$legacy_skill" ]]; then
   legacy_skill_backup="$(mktemp -d "$skills_root/.sx-ios-debug.backup.XXXXXX")"
   rmdir "$legacy_skill_backup"
-  mv -- "$legacy_skill" "$legacy_skill_backup"
-  legacy_skill_saved=1
+  legacy_skill_backup_intent=1
+  "$mv_bin" -- "$legacy_skill" "$legacy_skill_backup"
 fi
 
 if [[ "${AP_IOS_DEBUG_TEST_FAIL_AFTER_BACKUP:-0}" = 1 ]]; then
   fail "injected failure after backup"
 fi
 
-mv -- "$binary_stage" "$binary_install"
-binary_stage=""
-binary_placed=1
-mv -- "$package_stage" "$package_install"
-package_stage=""
-package_placed=1
-mv -- "$skill_stage" "$skill_install"
-skill_stage=""
-skill_placed=1
+binary_place_intent=1
+"$mv_bin" -- "$binary_stage" "$binary_install"
+package_place_intent=1
+"$mv_bin" -- "$package_stage" "$package_install"
+skill_place_intent=1
+"$mv_bin" -- "$skill_stage" "$skill_install"
 committed=1
