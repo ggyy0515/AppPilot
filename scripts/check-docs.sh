@@ -2,6 +2,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
+grep_bin="${GREP_BIN:-/usr/bin/grep}"
 files=(README.md docs/integration.md docs/protocol.md docs/troubleshooting.md)
 historical_cli="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
 historical_delivery="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-integration-delivery.md"
@@ -22,7 +23,7 @@ require_fixed() {
     local file="$2"
     local status
 
-    if grep -Fq -- "$pattern" "$file"; then
+    if "$grep_bin" -Fq -- "$pattern" "$file"; then
         return 0
     else
         status=$?
@@ -35,12 +36,29 @@ require_fixed() {
     exit 1
 }
 
+reject_fixed() {
+    local pattern="$1"
+    local file="$2"
+    local status
+
+    if "$grep_bin" -Fq -- "$pattern" "$file"; then
+        return 0
+    else
+        status=$?
+    fi
+    if [[ "$status" -eq 1 ]]; then
+        return 1
+    fi
+    echo "FAIL: grep failed while checking forbidden content in ${file#"$root/"} (status $status)" >&2
+    exit 2
+}
+
 reject_extended() {
     local pattern="$1"
     shift
     local status
 
-    if grep -REq -- "$pattern" "$@"; then
+    if "$grep_bin" -REq -- "$pattern" "$@"; then
         return 0
     else
         status=$?
@@ -51,6 +69,11 @@ reject_extended() {
     echo "FAIL: grep failed while checking forbidden documentation content (status $status)" >&2
     exit 2
 }
+
+if [[ ! -x "$grep_bin" ]]; then
+    echo "FAIL: missing executable grep: $grep_bin" >&2
+    exit 1
+fi
 
 for file in "${files[@]}"; do
     if [[ ! -s "$root/$file" ]]; then
@@ -140,7 +163,9 @@ for required_text in \
     'ap-ios-debug-demo-release.xcscheme' \
     '-scheme ap-ios-debug-demo ' \
     '-scheme ap-ios-debug-demo-release ' \
-    'com.openai.ap-ios-debug-demo'; do
+    'com.openai.ap-ios-debug-demo' \
+    'Examples/ap-ios-debug-demo/APIOSDebugDemo/APIOSDebugDemoStateProvider.swift' \
+    'PACKAGE_INSTALL := $(SHARE_ROOT)/ap-ios-debug-kit'; do
     require_fixed "$required_text" "$historical_delivery"
 done
 for forbidden_text in \
@@ -148,8 +173,12 @@ for forbidden_text in \
     'ReferencedContainer="container:APIOSDebugDemo.xcodeproj"' \
     '-scheme APIOSDebugDemo ' \
     'DEMO_SCHEME := APIOSDebugDemo' \
-    'com.openai.iosdebug.APIOSDebugDemo'; do
-    if grep -Fq -- "$forbidden_text" "$historical_delivery"; then
+    'com.openai.iosdebug.APIOSDebugDemo' \
+    'Examples/ap-ios-debug-demo/APIOSDebugDemo/DemoStateProvider.swift' \
+    'Create `DemoStateProvider.swift`' \
+    'PACKAGE_INSTALL := $(SHARE_ROOT)/APIOSDebugKit' \
+    'share/ap-ios-debug/APIOSDebugKit'; do
+    if reject_fixed "$forbidden_text" "$historical_delivery"; then
         echo "FAIL: delivery plan confuses an external name with a Swift identifier: '$forbidden_text'" >&2
         exit 1
     fi
@@ -169,14 +198,14 @@ for forbidden_text in \
     '"share", "ap-ios-debug", "APIOSDebugKit"' \
     '"swift", "APIOSDebugKit"' \
     'prints `ap-ios-debug version 0.1.0-dev`'; do
-    if grep -Fq -- "$forbidden_text" "$historical_cli"; then
+    if reject_fixed "$forbidden_text" "$historical_cli"; then
         echo "FAIL: CLI plan confuses an external name with a Swift identifier: '$forbidden_text'" >&2
         exit 1
     fi
 done
 
 require_fixed 'ap-ios-debug-demo.xcodeproj' "$historical_design"
-if grep -Fq -- 'APIOSDebugDemo.xcodeproj' "$historical_design"; then
+if reject_fixed 'APIOSDebugDemo.xcodeproj' "$historical_design"; then
     echo 'FAIL: design spec uses a Swift identifier as the Xcode project filename' >&2
     exit 1
 fi
