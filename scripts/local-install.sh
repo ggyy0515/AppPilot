@@ -114,7 +114,7 @@ rm_bin="${RM_BIN:-/bin/rm}"
 [[ -x "$mv_bin" ]] || fail "missing executable MV_BIN: $mv_bin"
 [[ -x "$rm_bin" ]] || fail "missing executable RM_BIN: $rm_bin"
 [[ -d "$package_source" ]] || fail "missing PACKAGE_SOURCE: $package_source"
-[[ -f "$package_source/Package.swift" || -f "$package_source/Templates/APIOSDebugBootstrap.swift" ]] || \
+[[ -f "$package_source/Package.swift" && -f "$package_source/Templates/APIOSDebugBootstrap.swift" ]] || \
   fail "PACKAGE_SOURCE is not APIOSDebugKit: $package_source"
 [[ -d "$skill_source" ]] || fail "missing SKILL_SOURCE: $skill_source"
 [[ -f "$skill_source/SKILL.md" ]] || fail "missing skill SKILL.md"
@@ -235,7 +235,7 @@ remove_staged_generated_entry "$package_stage/.build"
 remove_staged_generated_entry "$package_stage/.swiftpm"
 "$ditto_bin" "$skill_source" "$skill_stage"
 [[ -x "$binary_stage" ]] || fail "staged binary is not executable"
-[[ -f "$package_stage/Package.swift" || -f "$package_stage/Templates/APIOSDebugBootstrap.swift" ]] || \
+[[ -f "$package_stage/Package.swift" && -f "$package_stage/Templates/APIOSDebugBootstrap.swift" ]] || \
   fail "staged package is incomplete"
 [[ -f "$skill_stage/SKILL.md" && -f "$skill_stage/agents/openai.yaml" ]] || \
   fail "staged skill is incomplete"
@@ -287,4 +287,6 @@ package_place_intent=1
 "$mv_bin" -- "$package_stage" "$package_install"
 skill_place_intent=1
 "$mv_bin" -- "$skill_stage" "$skill_install"
+[[ -f "$package_install/Package.swift" && -f "$package_install/Templates/APIOSDebugBootstrap.swift" ]] || \
+  fail "installed package is incomplete"
 committed=1

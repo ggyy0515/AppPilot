@@ -15,6 +15,7 @@ mkdir -p "$tmp/source/package/Templates" "$tmp/source/skill/agents"
 mkdir -p "$tmp/outside-build" "$tmp/outside-swiftpm"
 printf '#!/bin/sh\necho test-binary\n' >"$tmp/source/ap-ios-debug"
 chmod 0755 "$tmp/source/ap-ios-debug"
+printf '%s\n' '// swift-tools-version: 6.0' >"$tmp/source/package/Package.swift"
 printf 'bootstrap\n' >"$tmp/source/package/Templates/APIOSDebugBootstrap.swift"
 printf 'build-sentinel\n' >"$tmp/outside-build/keep.txt"
 printf 'swiftpm-sentinel\n' >"$tmp/outside-swiftpm/keep.txt"
@@ -32,6 +33,15 @@ run_installer() {
     MV_BIN="${MV_BIN:-/bin/mv}" \
     RM_BIN="${RM_BIN:-/bin/rm}" \
     "$installer" "${4:-install}"
+}
+
+run_installer_with_package() {
+  PREFIX="$1" CODEX_HOME="$2" \
+    AP_IOS_DEBUG_BIN="$tmp/source/ap-ios-debug" \
+    PACKAGE_SOURCE="$3" \
+    SKILL_SOURCE="$tmp/source/skill" \
+    DITTO_BIN="/usr/bin/ditto" MV_BIN="/bin/mv" RM_BIN="/bin/rm" \
+    "$installer" install
 }
 
 if run_installer / "$tmp/codex"; then
@@ -63,6 +73,28 @@ printf 'old-package\n' >"$prefix/share/ap-ios-debug/ap-ios-debug-kit/version"
 printf 'old-skill\n' >"$codex_home/skills/ap-ios-debug-skill/version"
 if run_installer "$prefix" "$codex_home" "$tmp/source/missing-skill"; then
   echo 'FAIL: missing skill source was accepted' >&2
+  exit 1
+fi
+test "$(cat "$prefix/bin/ap-ios-debug")" = old-binary
+test "$(cat "$prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
+test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
+
+package_without_manifest="$tmp/source/package-without-manifest"
+mkdir -p "$package_without_manifest/Templates"
+printf 'bootstrap\n' >"$package_without_manifest/Templates/APIOSDebugBootstrap.swift"
+if run_installer_with_package "$prefix" "$codex_home" "$package_without_manifest"; then
+  echo 'FAIL: package without Package.swift was accepted' >&2
+  exit 1
+fi
+test "$(cat "$prefix/bin/ap-ios-debug")" = old-binary
+test "$(cat "$prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
+test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
+
+package_without_bootstrap="$tmp/source/package-without-bootstrap"
+mkdir -p "$package_without_bootstrap/Templates"
+printf '%s\n' '// swift-tools-version: 6.0' >"$package_without_bootstrap/Package.swift"
+if run_installer_with_package "$prefix" "$codex_home" "$package_without_bootstrap"; then
+  echo 'FAIL: package without APIOSDebugBootstrap.swift was accepted' >&2
   exit 1
 fi
 test "$(cat "$prefix/bin/ap-ios-debug")" = old-binary
@@ -102,6 +134,61 @@ test "$(cat "$codex_home/skills/ap-ios-debug-skill/version")" = old-skill
 test "$(cat "$prefix/bin/$legacy_binary_name")" = legacy-bin
 test "$(cat "$prefix/share/$legacy_share_name/$legacy_package_name/version")" = legacy-package
 test "$(cat "$codex_home/skills/$legacy_skill_name/version")" = legacy-skill
+
+printf '%s\n' '#!/bin/bash' 'set -euo pipefail' \
+  '/usr/bin/ditto "$@"' \
+  'if [[ "$1" = "$PACKAGE_SOURCE_TO_DAMAGE" ]]; then /bin/rm -f -- "$2/$PACKAGE_MARKER_TO_REMOVE"; fi' \
+  >"$tmp/damaging-ditto"
+chmod 0755 "$tmp/damaging-ditto"
+for marker in Package.swift Templates/APIOSDebugBootstrap.swift; do
+  stage_root="$tmp/stage-missing-${marker//\//-}"
+  stage_prefix="$stage_root/prefix"
+  stage_codex="$stage_root/codex"
+  mkdir -p "$stage_prefix/bin" "$stage_prefix/share/ap-ios-debug/ap-ios-debug-kit" \
+    "$stage_codex/skills/ap-ios-debug-skill"
+  printf 'old-binary\n' >"$stage_prefix/bin/ap-ios-debug"
+  printf 'old-package\n' >"$stage_prefix/share/ap-ios-debug/ap-ios-debug-kit/version"
+  printf 'old-skill\n' >"$stage_codex/skills/ap-ios-debug-skill/version"
+  export DITTO_BIN="$tmp/damaging-ditto"
+  export PACKAGE_SOURCE_TO_DAMAGE="$tmp/source/package"
+  export PACKAGE_MARKER_TO_REMOVE="$marker"
+  if run_installer "$stage_prefix" "$stage_codex"; then
+    echo "FAIL: staged package without $marker was accepted" >&2
+    exit 1
+  fi
+  unset DITTO_BIN PACKAGE_SOURCE_TO_DAMAGE PACKAGE_MARKER_TO_REMOVE
+  test "$(cat "$stage_prefix/bin/ap-ios-debug")" = old-binary
+  test "$(cat "$stage_prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
+  test "$(cat "$stage_codex/skills/ap-ios-debug-skill/version")" = old-skill
+done
+
+printf '%s\n' '#!/bin/bash' 'set -euo pipefail' \
+  '/bin/mv "$@"' \
+  'destination="${!#}"' \
+  'if [[ "$destination" = "$PACKAGE_INSTALL_TO_DAMAGE" ]]; then /bin/rm -f -- "$destination/$PACKAGE_MARKER_TO_REMOVE"; fi' \
+  >"$tmp/damaging-mv"
+chmod 0755 "$tmp/damaging-mv"
+for marker in Package.swift Templates/APIOSDebugBootstrap.swift; do
+  installed_root="$tmp/installed-missing-${marker//\//-}"
+  installed_prefix="$installed_root/prefix"
+  installed_codex="$installed_root/codex"
+  mkdir -p "$installed_prefix/bin" "$installed_prefix/share/ap-ios-debug/ap-ios-debug-kit" \
+    "$installed_codex/skills/ap-ios-debug-skill"
+  printf 'old-binary\n' >"$installed_prefix/bin/ap-ios-debug"
+  printf 'old-package\n' >"$installed_prefix/share/ap-ios-debug/ap-ios-debug-kit/version"
+  printf 'old-skill\n' >"$installed_codex/skills/ap-ios-debug-skill/version"
+  export MV_BIN="$tmp/damaging-mv"
+  export PACKAGE_INSTALL_TO_DAMAGE="$(cd -P "$installed_prefix/share/ap-ios-debug" && pwd)/ap-ios-debug-kit"
+  export PACKAGE_MARKER_TO_REMOVE="$marker"
+  if run_installer "$installed_prefix" "$installed_codex"; then
+    echo "FAIL: installed package without $marker was accepted" >&2
+    exit 1
+  fi
+  unset MV_BIN PACKAGE_INSTALL_TO_DAMAGE PACKAGE_MARKER_TO_REMOVE
+  test "$(cat "$installed_prefix/bin/ap-ios-debug")" = old-binary
+  test "$(cat "$installed_prefix/share/ap-ios-debug/ap-ios-debug-kit/version")" = old-package
+  test "$(cat "$installed_codex/skills/ap-ios-debug-skill/version")" = old-skill
+done
 
 printf '%s\n' '#!/bin/bash' 'set -eu' \
   'count=0; [[ -f "$MV_COUNT" ]] && count="$(cat "$MV_COUNT")"' \

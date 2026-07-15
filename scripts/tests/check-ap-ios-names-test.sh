@@ -6,6 +6,15 @@ checker="$root/scripts/check-ap-ios-names.sh"
 tmp="$(mktemp -d /tmp/ap-ios-name-test.XXXXXX)"
 trap 'rm -rf -- "$tmp"' EXIT
 
+if ! git -C "$root" check-ignore -q .ap-ios-debug/artifacts/test.png; then
+  echo 'FAIL: canonical repository artifacts are not ignored' >&2
+  exit 1
+fi
+if git -C "$root" check-ignore -q .ios-debug/artifacts/test.png; then
+  echo 'FAIL: legacy repository artifacts remain actively ignored' >&2
+  exit 1
+fi
+
 good="$tmp/good.txt"
 printf '%s\n' 'ap-ios-debug APIOSDebugKit AP_IOS_DEBUG_TOKEN .ap-ios-debug' >"$good"
 "$checker" --scan-only "$good" >/dev/null
@@ -19,6 +28,25 @@ for value in "${legacy_values[@]}"; do
     exit 1
   fi
 done
+
+wire_header="$tmp/wire-header.txt"
+printf '%s\n' 'keep headers beginning with x-ios-debug-protocol-version' >"$wire_header"
+"$checker" --scan-only "$wire_header" >/dev/null
+printf '%s\n' 'x-ios-debug is not a complete frozen header name' >"$wire_header"
+if "$checker" --scan-only "$wire_header" >/dev/null 2>&1; then
+  echo 'FAIL: wire-protocol exception accepted a non-header legacy name' >&2
+  exit 1
+fi
+
+cli_plan="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
+if rg -q 'x-''ap-ios-debug-' "$cli_plan"; then
+  echo 'FAIL: CLI plan renamed a frozen wire header prefix' >&2
+  exit 1
+fi
+if ! rg -q 'not beginning `content-` or `x-ios-debug-`' "$cli_plan"; then
+  echo 'FAIL: CLI plan is missing the frozen lowercase wire header prefix' >&2
+  exit 1
+fi
 
 fixture="$tmp/repo"
 mkdir -p \
@@ -71,6 +99,18 @@ printf '#!/bin/bash\nset -euo pipefail\n' >"$fixture/scripts/tests/local-install
 git -C "$fixture" init -q
 git -C "$fixture" add .
 AP_IOS_NAME_ROOT="$fixture" "$checker" >/dev/null
+
+fake_bin="$tmp/fake-bin"
+mkdir -p "$fake_bin"
+real_git="$(command -v git)"
+printf '%s\n' '#!/bin/bash' \
+  'if [[ "${1:-}" = ls-files ]]; then exit 7; fi' \
+  'exec "$REAL_GIT" "$@"' >"$fake_bin/git"
+chmod 0755 "$fake_bin/git"
+if PATH="$fake_bin:$PATH" REAL_GIT="$real_git" AP_IOS_NAME_ROOT="$fixture" "$checker" >/dev/null 2>&1; then
+  echo 'FAIL: git ls-files failure was accepted' >&2
+  exit 1
+fi
 
 assert_rejected() {
   local label="$1"

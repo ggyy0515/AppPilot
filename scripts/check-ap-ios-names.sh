@@ -7,7 +7,8 @@ root="$(pwd -P)"
 failures=0
 legacy_patterns=(
   'sx-ios-debug'
-  '(?<!ap-)ios-debug'
+  # Preserve only the frozen lowercase wire-header namespace x-ios-debug-<field>.
+  '(?<!ap-)(?<!x-)ios-debug|x-ios-debug(?!-)'
   '(?<!AP)IOSDebug'
   '(?<!AP_)IOS_DEBUG'
   '(?<!\.ap)\.ios-debug'
@@ -53,6 +54,12 @@ if [[ "${1:-}" = --scan-only ]]; then
   exit 0
 fi
 
+tracked_list="$(mktemp /tmp/ap-ios-tracked-files.XXXXXX)"
+trap 'rm -f -- "$tracked_list"' EXIT
+if ! git ls-files -z >"$tracked_list"; then
+  echo 'FAIL: unable to list tracked files' >&2
+  exit 1
+fi
 while IFS= read -r -d '' file; do
   scan_path "$file"
   case "$file" in
@@ -63,7 +70,7 @@ while IFS= read -r -d '' file; do
     scripts/tests/check-ap-ios-names-test.sh) continue ;;
   esac
   scan_file "$file"
-done < <(git ls-files -z)
+done <"$tracked_list"
 
 require_file() { [[ -f "$1" ]] || { echo "FAIL: missing $1" >&2; failures=1; }; }
 fail_metadata() { echo "FAIL: invalid $1 metadata" >&2; failures=1; }
@@ -175,7 +182,7 @@ require_exact_line_once() {
 installer=scripts/local-install.sh
 require_file "$installer"
 filter_dir="$(mktemp -d /tmp/ap-ios-name-filter.XXXXXX)"
-trap 'rm -rf -- "$filter_dir"' EXIT
+trap 'rm -f -- "$tracked_list"; rm -rf -- "$filter_dir"' EXIT
 if [[ -f "$installer" ]]; then
   filtered_installer="$filter_dir/local-install.sh"
   require_exact_line_once "$installer" 'legacy_binary="$prefix/bin/ios-debug"'
