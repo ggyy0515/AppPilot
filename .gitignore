@@ -6,3 +6,4 @@
 **/.swiftpm/
 **/DerivedData/
 *.xcresult
+/我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App.pdf
