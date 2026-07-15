@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
 )
 
 const maxScreenshotBytes int64 = 25 << 20

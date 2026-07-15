@@ -11,11 +11,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/buildinfo"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/internal/buildinfo"
+	"github.com/yangy003/ap-ios-debug-system/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
 )
 
 func TestCanonicalValidationPathOnlyAllowsExactTrustedDarwinAliases(t *testing.T) {

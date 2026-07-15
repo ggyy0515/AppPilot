@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/protocol"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/protocol"
 )
 
 func newRequestCommand(rt *Runtime) *cobra.Command {

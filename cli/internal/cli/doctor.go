@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/doctor"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/doctor"
+	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
 )
 
 func newDoctorCommand(rt *Runtime, deps doctor.Dependencies, version string) *cobra.Command {

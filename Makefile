@@ -17,7 +17,10 @@ SHARE_ROOT := $(PREFIX)/share/ap-ios-debug
 PACKAGE_INSTALL := $(SHARE_ROOT)/ap-ios-debug-kit
 SKILL_INSTALL := $(CODEX_HOME)/skills/ap-ios-debug-skill
 
-.PHONY: check-ap-ios-names check-ap-ios-names-test swift-format-config-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
+.PHONY: print-ap-ios-debug-bin check-ap-ios-names check-ap-ios-names-test swift-format-config-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
+
+print-ap-ios-debug-bin:
+	@printf '%s\n' "$(AP_IOS_DEBUG_BIN)"
 
 check-ap-ios-names:
 	@./scripts/check-ap-ios-names.sh
@@ -45,7 +48,7 @@ swift-test:
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
 	@cd cli && $(GO) build -trimpath \
-		-ldflags '-X github.com/yangy003/ap-ios-debug-system/cli/internal/buildinfo.Version=$(VERSION)' \
+		-ldflags '-X github.com/yangy003/ap-ios-debug-system/internal/buildinfo.Version=$(VERSION)' \
 		-o "$(AP_IOS_DEBUG_BIN)" ./cmd/ap-ios-debug
 
 scaffold-smoke: build-cli

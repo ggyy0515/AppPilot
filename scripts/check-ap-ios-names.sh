@@ -3,6 +3,7 @@ set -euo pipefail
 
 root="${AP_IOS_NAME_ROOT:-$(cd "$(dirname "$0")/.." && pwd -P)}"
 cd "$root"
+root="$(pwd -P)"
 failures=0
 legacy_patterns=(
   'sx-ios-debug'
@@ -76,7 +77,7 @@ require_file Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/xcshareddata
 
 go_module=""
 if ! go_module="$(cd cli && GOWORK=off go list -m -f '{{.Path}}' 2>/dev/null)" || \
-  [[ "$go_module" != github.com/yangy003/ap-ios-debug-system/cli ]]; then
+  [[ "$go_module" != github.com/yangy003/ap-ios-debug-system ]]; then
   fail_metadata 'Go module'
 fi
 
@@ -127,11 +128,8 @@ validate_scheme Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/xcsharedd
   Release APIOSDebugDemoRelease || fail_metadata 'Release scheme'
 
 make_values=""
-if ! make_values="$(/usr/bin/ruby -e '
-  values = File.readlines(ARGV.fetch(0)).map { |line| line[/\AAP_IOS_DEBUG_BIN\s*:=\s*(.*?)\s*\z/, 1] }.compact
-  abort unless values.length == 1
-  puts values.first
-' Makefile 2>/dev/null)" || [[ "$make_values" != '$(BUILD_DIR)/ap-ios-debug' ]]; then
+if ! make_values="$(make --no-print-directory print-ap-ios-debug-bin 2>/dev/null)" || \
+  [[ "$make_values" != "$root/build/ap-ios-debug" ]]; then
   fail_metadata 'Make AP_IOS_DEBUG_BIN assignment'
 fi
 

@@ -16,13 +16,13 @@ import (
 
 	"github.com/danielpaulus/go-ios/ios"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/doctor"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/protocol"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/scaffold"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/transport"
+	"github.com/yangy003/ap-ios-debug-system/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/internal/doctor"
+	"github.com/yangy003/ap-ios-debug-system/internal/protocol"
+	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
+	"github.com/yangy003/ap-ios-debug-system/internal/transport"
 )
 
 type Dependencies struct {

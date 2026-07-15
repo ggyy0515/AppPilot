@@ -28,7 +28,7 @@ mkdir -p \
   "$fixture/Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/xcshareddata/xcschemes" \
   "$fixture/scripts/tests"
 printf 'package main\n' >"$fixture/cli/cmd/ap-ios-debug/main.go"
-printf 'module github.com/yangy003/ap-ios-debug-system/cli\n\ngo 1.26.2\n' >"$fixture/cli/go.mod"
+printf 'module github.com/yangy003/ap-ios-debug-system\n\ngo 1.26.2\n' >"$fixture/cli/go.mod"
 printf '%s\n' \
   '// swift-tools-version: 6.0' \
   'import PackageDescription' \
@@ -56,7 +56,12 @@ printf '%s\n' \
   '<?xml version="1.0" encoding="UTF-8"?>' \
   '<Scheme version="1.7"><LaunchAction buildConfiguration="Release"><BuildableProductRunnable><BuildableReference BlueprintName="APIOSDebugDemoRelease" ReferencedContainer="container:ap-ios-debug-demo.xcodeproj"/></BuildableProductRunnable></LaunchAction></Scheme>' \
   >"$fixture/Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/xcshareddata/xcschemes/ap-ios-debug-demo-release.xcscheme"
-printf 'AP_IOS_DEBUG_BIN := $(BUILD_DIR)/ap-ios-debug\n' >"$fixture/Makefile"
+printf '%s\n' \
+  'BUILD_DIR := $(CURDIR)/build' \
+  'AP_IOS_DEBUG_BIN := $(BUILD_DIR)/ap-ios-debug' \
+  '.PHONY: print-ap-ios-debug-bin' \
+  'print-ap-ios-debug-bin:' \
+  $'\t@echo "$(AP_IOS_DEBUG_BIN)"' >"$fixture/Makefile"
 printf '# AppPilot\n' >"$fixture/README.md"
 printf '%s\n' \
   'legacy_binary="$prefix/bin/ios-debug"' \
@@ -75,7 +80,7 @@ assert_rejected() {
   fi
 }
 
-printf '%s\n' '// module github.com/yangy003/ap-ios-debug-system/cli' 'module example.invalid/wrong' 'go 1.26.2' >"$fixture/cli/go.mod"
+printf '%s\n' '// module github.com/yangy003/ap-ios-debug-system' 'module example.invalid/wrong' 'go 1.26.2' >"$fixture/cli/go.mod"
 assert_rejected 'wrong Go module hidden by a comment'
 git -C "$fixture" checkout -- cli/go.mod
 
@@ -105,6 +110,20 @@ git -C "$fixture" checkout -- Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcode
 
 printf '%s\n' '# AP_IOS_DEBUG_BIN := $(BUILD_DIR)/ap-ios-debug' 'AP_IOS_DEBUG_BIN := wrong' >"$fixture/Makefile"
 assert_rejected 'wrong Make assignment hidden by a comment'
+git -C "$fixture" checkout -- Makefile
+
+printf 'AP_IOS_DEBUG_BIN = /tmp/wrong\n' >>"$fixture/Makefile"
+assert_rejected 'later Make assignment overriding the canonical value'
+git -C "$fixture" checkout -- Makefile
+
+printf '%s\n' \
+  '# AP_IOS_DEBUG_BIN := $(BUILD_DIR)/ap-ios-debug' \
+  'AP_IOS_DEBUG_BIN ?= $(BUILD_DIR)/ap-ios-debug' \
+  'AP_IOS_DEBUG_BIN = /tmp/wrong' \
+  '.PHONY: print-ap-ios-debug-bin' \
+  'print-ap-ios-debug-bin:' \
+  $'\t@echo "$(AP_IOS_DEBUG_BIN)"' >"$fixture/Makefile"
+assert_rejected 'wrong effective Make value hidden by comment and another operator'
 git -C "$fixture" checkout -- Makefile
 
 printf '%s\n' 'body text' '# Wrong' '# AppPilot' >"$fixture/README.md"

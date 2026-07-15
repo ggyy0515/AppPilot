@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/cli"
+	"github.com/yangy003/ap-ios-debug-system/internal/cli"
 )
 
 const localProjectConfig = "port = 9876\noutput_dir = \".ap-ios-debug/artifacts\"\n"

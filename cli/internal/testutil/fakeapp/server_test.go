@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/testutil/fakeapp"
+	"github.com/yangy003/ap-ios-debug-system/internal/testutil/fakeapp"
 )
 
 func do(t *testing.T, client *http.Client, method, url string) (*http.Response, map[string]any) {

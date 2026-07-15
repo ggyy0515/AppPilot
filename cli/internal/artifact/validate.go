@@ -4,7 +4,7 @@ import (
 	"image/png"
 	"os"
 
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
 )
 
 func ValidatePNG(path string) error {

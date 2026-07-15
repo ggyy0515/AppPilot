@@ -6,8 +6,8 @@ import (
 	"unicode"
 
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/device"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/device"
 )
 
 func newDevicesCommand(rt *Runtime) *cobra.Command {

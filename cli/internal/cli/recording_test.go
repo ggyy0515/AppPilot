@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/artifact"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/cli/internal/contract"
+	"github.com/yangy003/ap-ios-debug-system/internal/artifact"
+	"github.com/yangy003/ap-ios-debug-system/internal/config"
+	"github.com/yangy003/ap-ios-debug-system/internal/contract"
 )
 
 type recordingStep struct {
