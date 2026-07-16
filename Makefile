@@ -17,7 +17,7 @@ SHARE_ROOT := $(PREFIX)/share/ap-ios-debug
 PACKAGE_INSTALL := $(SHARE_ROOT)/ap-ios-debug-kit
 SKILL_INSTALL := $(CODEX_HOME)/skills/ap-ios-debug-skill
 
-.PHONY: print-ap-ios-debug-bin check-ap-ios-names check-ap-ios-names-test swift-format-config-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
+.PHONY: print-ap-ios-debug-bin check-ap-ios-names check-ap-ios-names-test open-source-readiness-test swift-format-config-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke demo-test demo-debug demo-release simulator-e2e release-scan device-smoke device-smoke-test validate-skill validate-skill-test check-docs local-install-safety-test install-local uninstall-local install-smoke-isolated verify verify-device clean
 
 print-ap-ios-debug-bin:
 	@printf '%s\n' "$(AP_IOS_DEBUG_BIN)"
@@ -27,6 +27,9 @@ check-ap-ios-names:
 
 check-ap-ios-names-test:
 	@./scripts/tests/check-ap-ios-names-test.sh
+
+open-source-readiness-test:
+	@./scripts/tests/open-source-readiness-test.sh
 
 swift-format-config-test:
 	@./scripts/tests/swift-format-config-test.sh
@@ -48,7 +51,7 @@ swift-test:
 build-cli:
 	@mkdir -p "$(BUILD_DIR)"
 	@cd cli && $(GO) build -trimpath \
-		-ldflags '-X github.com/yangy003/ap-ios-debug-system/internal/buildinfo.Version=$(VERSION)' \
+		-ldflags '-X github.com/ggyy0515/AppPilot/internal/buildinfo.Version=$(VERSION)' \
 		-o "$(AP_IOS_DEBUG_BIN)" ./cmd/ap-ios-debug
 
 scaffold-smoke: build-cli
@@ -134,7 +137,7 @@ install-smoke-isolated: local-install-safety-test
 	test -f "$$tmp/Project/.ap-ios-debug/artifacts/keep.txt"; \
 	echo "PASS: install-uninstall-isolated"
 
-verify: check-ap-ios-names check-ap-ios-names-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke \
+verify: check-ap-ios-names check-ap-ios-names-test open-source-readiness-test fmt-check go-vet go-test swift-test build-cli scaffold-smoke \
 	demo-test demo-debug demo-release simulator-e2e release-scan \
 	validate-skill check-docs install-smoke-isolated device-smoke
 	@echo "PASS: make verify"

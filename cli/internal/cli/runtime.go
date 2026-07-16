@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ggyy0515/AppPilot/internal/config"
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/device"
+	"github.com/ggyy0515/AppPilot/internal/protocol"
+	"github.com/ggyy0515/AppPilot/internal/transport"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/device"
-	"github.com/yangy003/ap-ios-debug-system/internal/protocol"
-	"github.com/yangy003/ap-ios-debug-system/internal/transport"
 )
 
 type DeviceDiscoverer interface {

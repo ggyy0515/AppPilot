@@ -92,7 +92,7 @@ approved_external_tokens=(
   'ap-ios-debug.local'
   '/tmp/ap-ios-debug/artifacts/test.png'
   'Use ap-ios-debug, then continue.'
-  'github.com/yangy003/ap-ios-debug-system'
+  'github.com/ggyy0515/AppPilot'
   'mktemp -d /tmp/ap-ios-debug-install-test.XXXXXX'
 )
 for value in "${approved_external_tokens[@]}"; do
@@ -123,16 +123,6 @@ for value in "${external_token_case_variants[@]}"; do
   fi
 done
 
-cli_plan="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
-if rg -q 'x-''ap-ios-debug-' "$cli_plan"; then
-  echo 'FAIL: CLI plan renamed a frozen wire header prefix' >&2
-  exit 1
-fi
-if ! rg -q 'not beginning `content-` or `x-ios-debug-`' "$cli_plan"; then
-  echo 'FAIL: CLI plan is missing the frozen lowercase wire header prefix' >&2
-  exit 1
-fi
-
 fixture="$tmp/repo"
 mkdir -p \
   "$fixture/cli/cmd/ap-ios-debug" \
@@ -141,7 +131,7 @@ mkdir -p \
   "$fixture/Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/xcshareddata/xcschemes" \
   "$fixture/scripts/tests"
 printf 'package main\n' >"$fixture/cli/cmd/ap-ios-debug/main.go"
-printf 'module github.com/yangy003/ap-ios-debug-system\n\ngo 1.26.2\n' >"$fixture/cli/go.mod"
+printf 'module github.com/ggyy0515/AppPilot\n\ngo 1.26.2\n' >"$fixture/cli/go.mod"
 printf '%s\n' \
   '// swift-tools-version: 6.0' \
   'import PackageDescription' \
@@ -158,8 +148,8 @@ printf '%s\n' \
   ')' >"$fixture/swift/ap-ios-debug-kit/Package.swift"
 printf '%s\n' '---' 'name: ap-ios-debug-skill' '---' >"$fixture/codex/skills/ap-ios-debug-skill/SKILL.md"
 printf '%s\n' \
-  'PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;' \
-  'PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo.tests;' \
+  'PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo;' \
+  'PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo.tests;' \
   >"$fixture/Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/project.pbxproj"
 printf '%s\n' \
   '<?xml version="1.0" encoding="UTF-8"?>' \
@@ -205,7 +195,7 @@ assert_rejected() {
   fi
 }
 
-printf '%s\n' '// module github.com/yangy003/ap-ios-debug-system' 'module example.invalid/wrong' 'go 1.26.2' >"$fixture/cli/go.mod"
+printf '%s\n' '// module github.com/ggyy0515/AppPilot' 'module example.invalid/wrong' 'go 1.26.2' >"$fixture/cli/go.mod"
 assert_rejected 'wrong Go module hidden by a comment'
 git -C "$fixture" checkout -- cli/go.mod
 
@@ -221,7 +211,7 @@ printf '%s\n' '---' 'name: wrong-skill' '---' '# name: ap-ios-debug-skill' >"$fi
 assert_rejected 'wrong skill frontmatter hidden by body text'
 git -C "$fixture" checkout -- codex/skills/ap-ios-debug-skill/SKILL.md
 
-printf '%s\n' '// PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;' 'PRODUCT_BUNDLE_IDENTIFIER = example.invalid.wrong;' 'PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo.tests;' >"$fixture/Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/project.pbxproj"
+printf '%s\n' '// PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo;' 'PRODUCT_BUNDLE_IDENTIFIER = example.invalid.wrong;' 'PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo.tests;' >"$fixture/Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/project.pbxproj"
 assert_rejected 'wrong bundle identifier hidden by a comment'
 git -C "$fixture" checkout -- Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/project.pbxproj
 

@@ -6,7 +6,7 @@ root="$(cd "$(dirname "$0")/.." && pwd -P)"
 source "$root/scripts/secret-scan.sh"
 binary="${AP_IOS_DEBUG_BIN:-$root/build/ap-ios-debug}"
 derived="${DERIVED_DATA:-$root/build/DerivedData-simulator-e2e}"
-bundle_id="com.openai.ap-ios-debug-demo"
+bundle_id="com.ggyy.ap-ios-debug-demo"
 scheme="${AP_IOS_DEBUG_E2E_SCHEME:-ap-ios-debug-demo}"
 app_port=9876
 port="${AP_IOS_DEBUG_E2E_PORT:-$app_port}"

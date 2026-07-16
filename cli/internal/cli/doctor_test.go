@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/danielpaulus/go-ios/ios"
+	"github.com/ggyy0515/AppPilot/internal/config"
+	"github.com/ggyy0515/AppPilot/internal/device"
+	"github.com/ggyy0515/AppPilot/internal/doctor"
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/internal/device"
-	"github.com/yangy003/ap-ios-debug-system/internal/doctor"
 )
 
 func TestBoundedUSBProbeReturnsWhenContextIsCanceled(t *testing.T) {

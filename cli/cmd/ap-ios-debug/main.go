@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/yangy003/ap-ios-debug-system/internal/buildinfo"
-	"github.com/yangy003/ap-ios-debug-system/internal/cli"
+	"github.com/ggyy0515/AppPilot/internal/buildinfo"
+	"github.com/ggyy0515/AppPilot/internal/cli"
 )
 
 func main() {

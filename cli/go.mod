@@ -1,4 +1,4 @@
-module github.com/yangy003/ap-ios-debug-system
+module github.com/ggyy0515/AppPilot
 
 go 1.26.2
 

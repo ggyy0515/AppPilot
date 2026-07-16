@@ -108,8 +108,6 @@ fi
 while IFS= read -r -d '' file; do
   scan_path "$file"
   case "$file" in
-    docs/superpowers/specs/2026-07-15-ap-ios-debug-system-rename-design.md|\
-    docs/superpowers/plans/2026-07-15-ap-ios-debug-system-rename.md|\
     scripts/local-install.sh|\
     scripts/check-ap-ios-names.sh|\
     scripts/tests/check-ap-ios-names-test.sh) continue ;;
@@ -129,7 +127,7 @@ require_file Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/xcshareddata
 
 go_module=""
 if ! go_module="$(cd cli && GOWORK=off go list -m -f '{{.Path}}' 2>/dev/null)" || \
-  [[ "$go_module" != github.com/yangy003/ap-ios-debug-system ]]; then
+  [[ "$go_module" != github.com/ggyy0515/AppPilot ]]; then
   fail_metadata 'Go module'
 fi
 
@@ -159,7 +157,7 @@ if ! bundle_ids="$(/usr/bin/ruby -e '
   abort if values.empty?
   puts values.uniq.sort
 ' Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj/project.pbxproj 2>/dev/null)" || \
-  [[ "$bundle_ids" != $'com.openai.ap-ios-debug-demo\ncom.openai.ap-ios-debug-demo.tests' ]]; then
+  [[ "$bundle_ids" != $'com.ggyy.ap-ios-debug-demo\ncom.ggyy.ap-ios-debug-demo.tests' ]]; then
   fail_metadata 'Xcode bundle identifier'
 fi
 

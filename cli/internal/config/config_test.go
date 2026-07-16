@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ggyy0515/AppPilot/internal/config"
+	"github.com/ggyy0515/AppPilot/internal/contract"
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
 )
 
 func TestLoadUsesExactPrecedenceAndResolvesProjectOutput(t *testing.T) {

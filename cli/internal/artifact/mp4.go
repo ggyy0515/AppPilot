@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/contract"
 )
 
 var compatibleMP4Brands = map[string]struct{}{

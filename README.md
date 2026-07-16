@@ -6,7 +6,7 @@
 
 ## English
 
-AppPilot is a Debug-only iOS development and diagnostics loop. The `ap-ios-debug` CLI talks to an explicitly integrated App through `APIOSDebugKit`, while `ap-ios-debug-skill` gives Codex a safe, repeatable operating sequence.
+AppPilot is a Debug-only iOS development and diagnostics loop. The `ap-ios-debug` CLI talks to an explicitly integrated App through `APIOSDebugKit`, while `ap-ios-debug-skill` gives Codex a safe, repeatable operating sequence. Source is hosted at [github.com/ggyy0515/AppPilot](https://github.com/ggyy0515/AppPilot) under the Apache-2.0 license.
 
 ### What AppPilot can do
 
@@ -30,6 +30,8 @@ AppPilot is a Debug-only iOS development and diagnostics loop. The `ap-ios-debug
 
 ```bash
 set -euo pipefail
+git clone https://github.com/ggyy0515/AppPilot.git
+cd AppPilot
 make verify
 make install-local
 command -v ap-ios-debug
@@ -221,7 +223,7 @@ make clean && make verify && make clean
 
 ## 中文
 
-AppPilot 是一个仅用于 Debug 构建的 iOS 开发与诊断闭环。`ap-ios-debug` CLI 通过显式集成的 `APIOSDebugKit` 与 App 通信，`ap-ios-debug-skill` 则为 Codex 提供安全、可重复的操作顺序。
+AppPilot 是一个仅用于 Debug 构建的 iOS 开发与诊断闭环。`ap-ios-debug` CLI 通过显式集成的 `APIOSDebugKit` 与 App 通信，`ap-ios-debug-skill` 则为 Codex 提供安全、可重复的操作顺序。源代码托管于 [github.com/ggyy0515/AppPilot](https://github.com/ggyy0515/AppPilot)，采用 Apache-2.0 许可证。
 
 ### AppPilot 当前能力
 
@@ -245,6 +247,8 @@ AppPilot 是一个仅用于 Debug 构建的 iOS 开发与诊断闭环。`ap-ios-
 
 ```bash
 set -euo pipefail
+git clone https://github.com/ggyy0515/AppPilot.git
+cd AppPilot
 make verify
 make install-local
 command -v ap-ios-debug

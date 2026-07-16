@@ -5,9 +5,9 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/device"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/device"
 )
 
 func newDevicesCommand(rt *Runtime) *cobra.Command {

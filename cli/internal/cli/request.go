@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/protocol"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/protocol"
 )
 
 func newRequestCommand(rt *Runtime) *cobra.Command {

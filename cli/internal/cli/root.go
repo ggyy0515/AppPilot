@@ -15,14 +15,14 @@ import (
 	"time"
 
 	"github.com/danielpaulus/go-ios/ios"
+	"github.com/ggyy0515/AppPilot/internal/config"
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/device"
+	"github.com/ggyy0515/AppPilot/internal/doctor"
+	"github.com/ggyy0515/AppPilot/internal/protocol"
+	"github.com/ggyy0515/AppPilot/internal/scaffold"
+	"github.com/ggyy0515/AppPilot/internal/transport"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/device"
-	"github.com/yangy003/ap-ios-debug-system/internal/doctor"
-	"github.com/yangy003/ap-ios-debug-system/internal/protocol"
-	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
-	"github.com/yangy003/ap-ios-debug-system/internal/transport"
 )
 
 type Dependencies struct {

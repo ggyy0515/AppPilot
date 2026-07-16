@@ -11,11 +11,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/yangy003/ap-ios-debug-system/internal/buildinfo"
-	"github.com/yangy003/ap-ios-debug-system/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/device"
-	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
+	"github.com/ggyy0515/AppPilot/internal/buildinfo"
+	"github.com/ggyy0515/AppPilot/internal/config"
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/device"
+	"github.com/ggyy0515/AppPilot/internal/scaffold"
 )
 
 const (

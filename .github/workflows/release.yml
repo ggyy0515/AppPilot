@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: 1.26.2
+          cache-dependency-path: cli/go.sum
+      - name: Validate release tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          git tag --points-at HEAD | grep -Fxq "$GITHUB_REF_NAME"
+      - name: Verify
+        run: make clean && make verify && make clean
+      - name: Build release archives
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          for arch in arm64 amd64; do
+            stage="dist/AppPilot_${version}_darwin_${arch}"
+            mkdir -p "$stage"
+            (
+              cd cli
+              CGO_ENABLED=0 GOOS=darwin GOARCH="$arch" go build -trimpath \
+                -ldflags "-s -w -X github.com/ggyy0515/AppPilot/internal/buildinfo.Version=$version" \
+                -o "../$stage/ap-ios-debug" ./cmd/ap-ios-debug
+            )
+            cp LICENSE NOTICE THIRD_PARTY_NOTICES.md "$stage/"
+            tar -C dist -czf "$stage.tar.gz" "$(basename "$stage")"
+            rm -rf "$stage"
+          done
+          (cd dist && shasum -a 256 ./*.tar.gz >SHA256SUMS)
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" dist/*
+          --verify-tag
+          --generate-notes
+          --title "AppPilot $GITHUB_REF_NAME"

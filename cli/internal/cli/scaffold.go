@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ggyy0515/AppPilot/internal/scaffold"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
 )
 
 func newAppScaffold(rt *Runtime) *cobra.Command {

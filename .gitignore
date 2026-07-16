@@ -1,9 +1,9 @@
 .worktrees/
 .superpowers/
+.DS_Store
 /build/
 /.ap-ios-debug/
 **/.build/
 **/.swiftpm/
 **/DerivedData/
 *.xcresult
-/我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App.pdf

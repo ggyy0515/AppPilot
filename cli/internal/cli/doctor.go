@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ggyy0515/AppPilot/internal/config"
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/doctor"
+	"github.com/ggyy0515/AppPilot/internal/scaffold"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/internal/config"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/doctor"
-	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
 )
 
 func newDoctorCommand(rt *Runtime, deps doctor.Dependencies, version string) *cobra.Command {

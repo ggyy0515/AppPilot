@@ -167,7 +167,7 @@ fi
 binary="${AP_IOS_DEBUG_BIN:-$root/build/ap-ios-debug}"
 derived="${DERIVED_DATA:-$root/build/DerivedData-release-scan}"
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-release.XXXXXX")"
-bundle_id="com.openai.ap-ios-debug-demo"
+bundle_id="com.ggyy.ap-ios-debug-demo"
 udid=""
 token="${AP_IOS_DEBUG_RELEASE_TOKEN:-$(uuidgen | tr '[:upper:]' '[:lower:]')}"
 port="${AP_IOS_DEBUG_RELEASE_PORT:-9876}"

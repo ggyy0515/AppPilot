@@ -255,7 +255,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -269,7 +269,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -284,7 +284,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -299,7 +299,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -313,7 +313,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo;
 				PRODUCT_NAME = APIOSDebugDemoRelease;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -328,7 +328,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo;
 				PRODUCT_NAME = APIOSDebugDemoRelease;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;

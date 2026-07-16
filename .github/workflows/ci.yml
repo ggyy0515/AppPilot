@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: 1.26.2
+          cache-dependency-path: cli/go.sum
+      - name: Show toolchain versions
+        run: |
+          go version
+          swift --version
+          xcodebuild -version
+      - name: Verify
+        run: make clean && make verify && make clean

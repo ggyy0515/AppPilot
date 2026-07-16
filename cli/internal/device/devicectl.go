@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/contract"
 )
 
 const devicectlJSONVersion = 3

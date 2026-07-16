@@ -7,9 +7,9 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/scaffold"
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/scaffold"
 )
 
 const projectConfig = "port = 9876\noutput_dir = \".ap-ios-debug/artifacts\"\n"

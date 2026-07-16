@@ -15,8 +15,8 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/transport"
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/transport"
 )
 
 const (

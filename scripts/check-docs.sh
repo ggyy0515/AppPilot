@@ -6,11 +6,7 @@ root="${AP_IOS_DOC_ROOT:-$default_root}"
 root="$(cd "$root" && pwd -P)"
 grep_bin="${GREP_BIN:-/usr/bin/grep}"
 find_bin="${FIND_BIN:-/usr/bin/find}"
-git_bin="${GIT_BIN:-/usr/bin/git}"
 files=(README.md AGENTS.md .gitignore docs/integration.md docs/protocol.md docs/troubleshooting.md)
-historical_cli="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-cli.md"
-historical_delivery="$root/docs/superpowers/plans/2026-07-13-ap-ios-debug-integration-delivery.md"
-historical_design="$root/docs/superpowers/specs/2026-07-12-ap-ios-debug-system-design.md"
 legacy_scan_files=("$root/README.md" "$root/AGENTS.md")
 find_output=''
 
@@ -283,11 +279,6 @@ if [[ ! -x "$find_bin" ]]; then
     echo "FAIL: missing executable find: $find_bin" >&2
     exit 1
 fi
-if [[ ! -x "$git_bin" ]]; then
-    echo "FAIL: missing executable git: $git_bin" >&2
-    exit 1
-fi
-
 find_output="$(mktemp "${TMPDIR:-/tmp}/ap-ios-docs-find.XXXXXX")"
 find_status=0
 "$find_bin" "$root/docs" -type f -name '*.md' -print0 >"$find_output" || find_status=$?
@@ -296,12 +287,6 @@ if [[ "$find_status" -ne 0 ]]; then
     exit 1
 fi
 while IFS= read -r -d '' file; do
-    case "$file" in
-        "$root/docs/superpowers/specs/2026-07-15-ap-ios-debug-system-rename-design.md"|\
-        "$root/docs/superpowers/plans/2026-07-15-ap-ios-debug-system-rename.md")
-            continue
-            ;;
-    esac
     legacy_scan_files+=("$file")
 done <"$find_output"
 
@@ -371,7 +356,7 @@ for canonical_name in \
     '- Demo filesystem names and schemes: `ap-ios-debug-demo*`' \
     '- Configuration and artifacts: `.ap-ios-debug.toml` and `.ap-ios-debug/`' \
     '- Environment variables: `AP_IOS_DEBUG_*`' \
-    '- Go module: `github.com/yangy003/ap-ios-debug-system`'; do
+    '- Go module: `github.com/ggyy0515/AppPilot`'; do
     require_exact_line_in_section "$canonical_name" '## Canonical names' "$root/AGENTS.md"
 done
 destructive_policy='- Agents MUST obtain explicit user approval immediately before activating an action whose current role is `destructive`; this is an agent policy, not a CLI-enforced authorization check.'
@@ -405,113 +390,6 @@ for protocol_header in \
     'X-IOS-Debug-Request-ID' \
     'X-IOS-Debug-SHA256'; do
     require_fixed "$protocol_header" "$root/AGENTS.md"
-done
-
-target_pdf='我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App.pdf'
-exact_pdf_rule="/$target_pdf"
-require_exact_line "$exact_pdf_rule" "$root/.gitignore"
-
-positive_pdf_rule=''
-if ! positive_pdf_rule="$(/usr/bin/awk -v exact="$exact_pdf_rule" '
-    {
-        rule = $0
-        sub(/[[:space:]]+$/, "", rule)
-        if (rule == "" || substr(rule, 1, 1) == "#" ||
-            substr(rule, 1, 1) == "!" || rule == exact) {
-            next
-        }
-        if (tolower(rule) ~ /\.pdf/) {
-            print rule
-            exit
-        }
-    }
-' "$root/.gitignore")"; then
-    echo 'FAIL: unable to inspect positive PDF ignore rules in .gitignore' >&2
-    exit 1
-fi
-if [[ -n "$positive_pdf_rule" ]]; then
-    echo "FAIL: positive PDF ignore rule is forbidden in .gitignore: $positive_pdf_rule" >&2
-    exit 1
-fi
-
-repo_git_dir=''
-git_status=0
-if repo_git_dir="$("$git_bin" -C "$default_root" rev-parse --absolute-git-dir 2>/dev/null)"; then
-    :
-else
-    git_status=$?
-    echo "FAIL: git failed while resolving the repository metadata directory (status $git_status)" >&2
-    exit 1
-fi
-
-check_pdf_ignore_semantics() {
-    local candidate="$1"
-    local must_be_ignored="$2"
-    local result=''
-    local status=0
-    local source_status=0
-    local from_fixture=false
-
-    if GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null \
-        "$git_bin" -C "$root" \
-        -c core.excludesFile=/dev/null \
-        -c core.ignoreCase=false \
-        --git-dir="$repo_git_dir" \
-        --work-tree="$root" \
-        check-ignore --no-index --quiet -- "$candidate" >/dev/null 2>&1; then
-        status=0
-    else
-        status=$?
-    fi
-
-    if [[ "$status" -gt 1 ]]; then
-        echo "FAIL: git check-ignore failed while validating PDF ignore semantics (status $status)" >&2
-        exit 1
-    fi
-    if [[ "$status" -eq 0 ]]; then
-        if result="$(GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null \
-            "$git_bin" -C "$root" \
-            -c core.excludesFile=/dev/null \
-            -c core.ignoreCase=false \
-            --git-dir="$repo_git_dir" \
-            --work-tree="$root" \
-            check-ignore --no-index --verbose -- "$candidate" 2>&1)"; then
-            source_status=0
-        else
-            source_status=$?
-        fi
-        if [[ "$source_status" -ne 0 ]]; then
-            echo "FAIL: git check-ignore source lookup failed while validating PDF ignore semantics (status $source_status)" >&2
-            exit 1
-        fi
-        case "${result%%$'\n'*}" in
-            .gitignore:*|"$root/.gitignore":*) from_fixture=true ;;
-        esac
-    fi
-
-    if "$must_be_ignored"; then
-        if [[ "$status" -ne 0 ]] || ! "$from_fixture"; then
-            echo "FAIL: exact root PDF target is not ignored by .gitignore: $candidate" >&2
-            exit 1
-        fi
-    elif [[ "$status" -eq 0 ]] && "$from_fixture"; then
-        echo "FAIL: PDF ignore rule must not ignore non-target PDF: $candidate" >&2
-        exit 1
-    fi
-}
-
-check_pdf_ignore_semantics "$target_pdf" true
-for candidate in \
-    'other.pdf' \
-    'nested/other.pdf' \
-    'other.PDF' \
-    'nested/other.PDF' \
-    'docs/report.pdf' \
-    'docs/nested/report.pdf' \
-    'docs/report.PDF' \
-    'docs/nested/report.PDF' \
-    "nested/$target_pdf"; do
-    check_pdf_ignore_semantics "$candidate" false
 done
 
 name_checker="$default_root/scripts/check-ap-ios-names.sh"
@@ -583,57 +461,4 @@ if reject_extended 'product only to (the )?.*Debug configuration' "$root/docs/in
     echo "FAIL: docs prescribe unsupported configuration-scoped package linking" >&2
     exit 1
 fi
-for required_text in \
-    'Examples/ap-ios-debug-demo/ap-ios-debug-demo.xcodeproj' \
-    'ap-ios-debug-demo.xcscheme' \
-    'ap-ios-debug-demo-release.xcscheme' \
-    '-scheme ap-ios-debug-demo ' \
-    '-scheme ap-ios-debug-demo-release ' \
-    'com.openai.ap-ios-debug-demo' \
-    'Examples/ap-ios-debug-demo/APIOSDebugDemo/APIOSDebugDemoStateProvider.swift' \
-    'PACKAGE_INSTALL := $(SHARE_ROOT)/ap-ios-debug-kit'; do
-    require_fixed "$required_text" "$historical_delivery"
-done
-for forbidden_text in \
-    'Examples/ap-ios-debug-demo/APIOSDebugDemo.xcodeproj' \
-    'ReferencedContainer="container:APIOSDebugDemo.xcodeproj"' \
-    '-scheme APIOSDebugDemo ' \
-    'DEMO_SCHEME := APIOSDebugDemo' \
-    'com.openai.iosdebug.APIOSDebugDemo' \
-    'Examples/ap-ios-debug-demo/APIOSDebugDemo/DemoStateProvider.swift' \
-    'Create `DemoStateProvider.swift`' \
-    'PACKAGE_INSTALL := $(SHARE_ROOT)/APIOSDebugKit' \
-    'share/ap-ios-debug/APIOSDebugKit'; do
-    if reject_fixed "$forbidden_text" "$historical_delivery"; then
-        echo "FAIL: delivery plan confuses an external name with a Swift identifier: '$forbidden_text'" >&2
-        exit 1
-    fi
-done
-
-for required_text in \
-    'testdata/ap-ios-debug-kit' \
-    'DebugTools", "ap-ios-debug-kit' \
-    '"share", "ap-ios-debug", "ap-ios-debug-kit"' \
-    '"swift", "ap-ios-debug-kit"' \
-    'AppPilot ap-ios-debug version 0.1.0-dev'; do
-    require_fixed "$required_text" "$historical_cli"
-done
-for forbidden_text in \
-    'testdata/APIOSDebugKit' \
-    'DebugTools", "APIOSDebugKit' \
-    '"share", "ap-ios-debug", "APIOSDebugKit"' \
-    '"swift", "APIOSDebugKit"' \
-    'prints `ap-ios-debug version 0.1.0-dev`'; do
-    if reject_fixed "$forbidden_text" "$historical_cli"; then
-        echo "FAIL: CLI plan confuses an external name with a Swift identifier: '$forbidden_text'" >&2
-        exit 1
-    fi
-done
-
-require_fixed 'ap-ios-debug-demo.xcodeproj' "$historical_design"
-if reject_fixed 'APIOSDebugDemo.xcodeproj' "$historical_design"; then
-    echo 'FAIL: design spec uses a Swift identifier as the Xcode project filename' >&2
-    exit 1
-fi
-
 echo "PASS: docs-check"

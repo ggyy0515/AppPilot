@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ggyy0515/AppPilot/internal/contract"
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
 )
 
 func TestStateAllowsExactlyFourMiBOfRawDataIncludingEnvelopeOverhead(t *testing.T) {

@@ -14,7 +14,7 @@ These instructions apply to the entire AppPilot repository.
 - Demo filesystem names and schemes: `ap-ios-debug-demo*`
 - Configuration and artifacts: `.ap-ios-debug.toml` and `.ap-ios-debug/`
 - Environment variables: `AP_IOS_DEBUG_*`
-- Go module: `github.com/yangy003/ap-ios-debug-system`
+- Go module: `github.com/ggyy0515/AppPilot`
 
 Do not introduce compatibility aliases or alternate spellings.
 

@@ -33,7 +33,7 @@ state="${FIXTURE_STATE:?}"
 printf 'xcodebuild\n' >>"$state/events"
 case "${FIXTURE_SCENARIO:-success}" in
   signing_failure) echo 'Signing for APIOSDebugDemo requires a development team.' >&2; exit 65 ;;
-  signing_profile_failure) echo "error: No profiles for 'com.openai.ap-ios-debug-demo' were found: Xcode couldn't find any iOS App Development provisioning profiles." >&2; exit 65 ;;
+  signing_profile_failure) echo "error: No profiles for 'com.ggyy.ap-ios-debug-demo' were found: Xcode couldn't find any iOS App Development provisioning profiles." >&2; exit 65 ;;
   signing_codesign_failure) echo 'Command CodeSign failed with a nonzero exit code' >&2; exit 65 ;;
   compile_failure) echo '/tmp/ContentView.swift:12:3: error: cannot find value' >&2; exit 65 ;;
   compile_provisioning_path) echo '/tmp/ProvisioningView.swift:12:3: error: cannot find value' >&2; exit 65 ;;

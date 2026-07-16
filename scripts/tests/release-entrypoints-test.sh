@@ -70,8 +70,8 @@ raise unless debug_target[1].include?('A10000000000000000000002 /* APIOSDebugKit
 raise if release_target[1].include?('APIOSDebugKit')
 raise unless release_target[1].include?('productName = APIOSDebugDemoRelease;')
 raise unless text.include?('relativePath = ../../swift/ap-ios-debug-kit;')
-raise unless text.scan('PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo;').length == 4
-raise unless text.scan('PRODUCT_BUNDLE_IDENTIFIER = com.openai.ap-ios-debug-demo.tests;').length == 2
+raise unless text.scan('PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo;').length == 4
+raise unless text.scan('PRODUCT_BUNDLE_IDENTIFIER = com.ggyy.ap-ios-debug-demo.tests;').length == 2
 RUBY
 
 grep -Fq 'release_scheme="${AP_IOS_DEBUG_RELEASE_SCHEME:-ap-ios-debug-demo-release}"' "$root/scripts/release-scan.sh"

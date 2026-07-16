@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible AppPilot problem
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Do not include device identifiers, pairing data, bearer tokens, signing
+        material, screenshots, recordings, or unrelated App payloads. Report
+        vulnerabilities through GitHub Security Advisories instead.
+  - type: input
+    id: version
+    attributes:
+      label: AppPilot version
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Sanitized macOS, Xcode, Go, device/simulator, and transport details.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed private device, authentication, signing, media, and App data.
+          required: true

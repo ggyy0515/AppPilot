@@ -30,7 +30,7 @@ fi
 
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/ap-ios-debug-device.XXXXXX")"
 derived="${DERIVED_DATA:-$root/build/DerivedData-device-smoke}"
-bundle_id="com.openai.ap-ios-debug-demo"
+bundle_id="com.ggyy.ap-ios-debug-demo"
 token="$($uuidgen_bin | tr '[:upper:]' '[:lower:]')-$($uuidgen_bin | tr '[:upper:]' '[:lower:]')"
 wrong_token="$($uuidgen_bin | tr '[:upper:]' '[:lower:]')-$($uuidgen_bin | tr '[:upper:]' '[:lower:]')"
 device_id=""

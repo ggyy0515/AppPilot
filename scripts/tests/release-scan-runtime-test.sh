@@ -125,7 +125,7 @@ grep -Fq -- '-configuration Release' "$log"
 test "$(grep -c '^cli ' "$log")" -eq 3
 test "$(grep '^cli ' "$log" | sed -n '1p' | grep -c 'port=19876')" -eq 1
 test "$(grep '^cli ' "$log" | sed -n '3p' | grep -c 'port=19876')" -eq 1
-grep -Fq 'launch --terminate-running-process SIM-UDID com.openai.ap-ios-debug-demo port=19876' "$log"
+grep -Fq 'launch --terminate-running-process SIM-UDID com.ggyy.ap-ios-debug-demo port=19876' "$log"
 
 set +e
 occupied="$(env "${common_env[@]}" FAKE_LSOF_STATUS=0 "$root/scripts/release-scan.sh" 2>&1)"

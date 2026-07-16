@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/ggyy0515/AppPilot/internal/artifact"
+	"github.com/ggyy0515/AppPilot/internal/contract"
+	"github.com/ggyy0515/AppPilot/internal/protocol"
 	"github.com/spf13/cobra"
-	"github.com/yangy003/ap-ios-debug-system/internal/artifact"
-	"github.com/yangy003/ap-ios-debug-system/internal/contract"
-	"github.com/yangy003/ap-ios-debug-system/internal/protocol"
 )
 
 const recordingMaxBytes int64 = 500 << 20

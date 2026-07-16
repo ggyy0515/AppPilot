@@ -6,8 +6,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/ggyy0515/AppPilot/internal/cli"
 	"github.com/stretchr/testify/require"
-	"github.com/yangy003/ap-ios-debug-system/internal/cli"
 )
 
 func TestExecuteJSONParseErrorKeepsStdoutPure(t *testing.T) {

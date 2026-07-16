@@ -44,27 +44,6 @@ if grep -Fq 'PASS: docs-check' "$tmp/find-output"; then
   exit 1
 fi
 
-fake_git="$tmp/git-error"
-{
-  printf '%s\n' '#!/bin/bash' 'set -euo pipefail'
-  printf '%s\n' \
-    'for argument in "$@"; do' \
-    '  if [[ "$argument" == check-ignore ]]; then exit 2; fi' \
-    'done' \
-    'exec /usr/bin/git "$@"'
-} >"$fake_git"
-chmod +x "$fake_git"
-
-if GIT_BIN="$fake_git" "$checker" >"$tmp/git-output" 2>&1; then
-  echo 'FAIL: docs checker ignored injected git failure' >&2
-  exit 1
-fi
-grep -Fq 'git check-ignore failed while validating PDF ignore semantics (status 2)' "$tmp/git-output"
-if grep -Fq 'PASS: docs-check' "$tmp/git-output"; then
-  echo 'FAIL: docs checker printed PASS after git failure' >&2
-  exit 1
-fi
-
 copy_fixture() {
   local destination="$1"
   mkdir -p "$destination"
@@ -176,27 +155,6 @@ run_recording_cleanup_stub english "$english_recording_block"
 run_recording_cleanup_stub chinese "$chinese_recording_block"
 echo 'PASS: recording cleanup stubs'
 
-exact_grep="$tmp/grep-exact-error"
-{
-  printf '%s\n' '#!/bin/bash' 'set -euo pipefail'
-  printf '%s\n' \
-    'if [[ "${1:-}" == "-Fxq" && "${4:-}" == */.gitignore ]]; then exit 2; fi' \
-    'exec /usr/bin/grep "$@"'
-} >"$exact_grep"
-chmod +x "$exact_grep"
-
-exact_grep_fixture="$tmp/exact-grep-fixture"
-copy_fixture "$exact_grep_fixture"
-if GREP_BIN="$exact_grep" AP_IOS_DOC_ROOT="$exact_grep_fixture" "$checker" >"$tmp/exact-output" 2>&1; then
-  echo 'FAIL: docs checker ignored injected exact-line grep failure' >&2
-  exit 1
-fi
-grep -Fq 'grep failed while checking .gitignore (status 2)' "$tmp/exact-output"
-if grep -Fq 'PASS: docs-check' "$tmp/exact-output"; then
-  echo 'FAIL: docs checker printed PASS after exact-line grep failure' >&2
-  exit 1
-fi
-
 expect_contract_failure() {
   local fixture="$1"
   local expected="$2"
@@ -216,13 +174,6 @@ missing_agents="$tmp/missing-agents"
 copy_fixture "$missing_agents"
 rm "$missing_agents/AGENTS.md"
 expect_contract_failure "$missing_agents" 'missing or empty AGENTS.md'
-
-missing_ignore="$tmp/missing-ignore"
-copy_fixture "$missing_ignore"
-sed -i '' \
-  's|^/我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App\.pdf$|/我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App.pdf.backup|' \
-  "$missing_ignore/.gitignore"
-expect_contract_failure "$missing_ignore" "missing '/我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App.pdf' in .gitignore"
 
 duplicate_anchor="$tmp/duplicate-anchor"
 copy_fixture "$duplicate_anchor"
@@ -292,40 +243,6 @@ copy_fixture "$misplaced_navigation"
 sed -i '' '3d' "$misplaced_navigation/README.md"
 printf '\n%s\n' '[English](#readme-english) | [中文](#readme-中文)' >>"$misplaced_navigation/README.md"
 expect_contract_failure "$misplaced_navigation" 'README navigation must be exact line 3'
-
-expect_pdf_failure() {
-  local fixture_name="$1"
-  local rule="$2"
-  local expected="$3"
-  local fixture="$tmp/$fixture_name"
-  copy_fixture "$fixture"
-  printf '%s\n' "$rule" >>"$fixture/.gitignore"
-  expect_contract_failure "$fixture" "$expected"
-}
-
-positive_pdf_error='positive PDF ignore rule is forbidden in .gitignore:'
-semantic_pdf_error='PDF ignore rule must not ignore non-target PDF:'
-expect_pdf_failure broad-pdf-double-star '**.pdf' "$positive_pdf_error"
-expect_pdf_failure broad-pdf-trailing-space '*.pdf ' "$positive_pdf_error"
-expect_pdf_failure broad-pdf-uppercase '*.PDF' "$positive_pdf_error"
-expect_pdf_failure broad-pdf-character-class '*.[pP][dD][fF]' "$semantic_pdf_error"
-expect_pdf_failure broad-pdf-nested-name '我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App.pdf' "$positive_pdf_error"
-expect_pdf_failure broad-pdf-docs-tree 'docs/**/*.pdf' "$positive_pdf_error"
-
-target_negation="$tmp/target-negation"
-copy_fixture "$target_negation"
-printf '%s\n' '!/我 vibe coding 了一个 iOS 调试工具，让 Claude Code 自己去操作 App.pdf' >>"$target_negation/.gitignore"
-expect_contract_failure "$target_negation" 'exact root PDF target is not ignored by .gitignore:'
-
-unrelated_negation="$tmp/unrelated-negation"
-copy_fixture "$unrelated_negation"
-printf '%s\n' '!/other.pdf' >>"$unrelated_negation/.gitignore"
-AP_IOS_DOC_ROOT="$unrelated_negation" "$checker" >/dev/null
-
-commented_pdf_rule="$tmp/commented-pdf-rule"
-copy_fixture "$commented_pdf_rule"
-printf '%s\n' '# docs/**/*.pdf' >>"$commented_pdf_rule/.gitignore"
-AP_IOS_DOC_ROOT="$commented_pdf_rule" "$checker" >/dev/null
 
 missing_canonical_section="$tmp/missing-canonical-section"
 copy_fixture "$missing_canonical_section"
