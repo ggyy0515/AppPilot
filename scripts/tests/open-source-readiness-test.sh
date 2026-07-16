@@ -33,6 +33,56 @@ grep -Fq 'Apache-2.0' README.md
 grep -Fxq '* @ggyy0515' .github/CODEOWNERS
 
 [[ "$(cd cli && GOWORK=off go list -m -f '{{.Path}}')" == github.com/ggyy0515/AppPilot ]]
+
+validate_go_module_floor() {
+  local module="$1"
+  local floor="$2"
+  local metadata
+  if ! metadata="$(cd cli && GOWORK=off go list -m -json "$module")"; then
+    echo "FAIL: cannot resolve $module metadata for the AppPilot 0.1.0 security floor" >&2
+    exit 1
+  fi
+
+  ruby -r json -r rubygems -e '
+    module_path = ARGV.fetch(0)
+    floor_text = ARGV.fetch(1)
+
+    def fail_floor(message)
+      warn "FAIL: #{message}"
+      exit 1
+    end
+
+    begin
+      metadata = JSON.parse(STDIN.read)
+    rescue JSON::ParserError => error
+      fail_floor("cannot parse #{module_path} metadata for the AppPilot 0.1.0 security floor: #{error.message}")
+    end
+    fail_floor("invalid #{module_path} metadata for the AppPilot 0.1.0 security floor") unless metadata.is_a?(Hash)
+    fail_floor("resolved module metadata does not identify #{module_path} for the AppPilot 0.1.0 security floor") unless metadata["Path"] == module_path
+
+    version_text = metadata["Version"]
+    unless version_text.is_a?(String) && !version_text.empty?
+      fail_floor("#{module_path} metadata is missing Version for the AppPilot 0.1.0 security floor")
+    end
+    unless metadata["Replace"].nil?
+      fail_floor("the AppPilot 0.1.0 security floor does not allow module replacement for #{module_path}")
+    end
+
+    begin
+      version = Gem::Version.new(version_text.delete_prefix("v"))
+      floor = Gem::Version.new(floor_text.delete_prefix("v"))
+    rescue ArgumentError => error
+      fail_floor("cannot compare #{module_path} version for the AppPilot 0.1.0 security floor: #{error.message}")
+    end
+    if version < floor
+      fail_floor("#{module_path} #{version_text} is below the AppPilot 0.1.0 security floor #{floor_text}")
+    end
+  ' "$module" "$floor" <<<"$metadata"
+}
+
+validate_go_module_floor golang.org/x/crypto v0.52.0
+validate_go_module_floor golang.org/x/net v0.55.0
+
 bundle_ids="$(ruby -e '
   values = File.readlines(ARGV.fetch(0)).map { |line| line[/^\s*PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);\s*$/, 1] }.compact
   puts values.uniq.sort
