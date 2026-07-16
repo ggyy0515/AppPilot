@@ -73,4 +73,148 @@ grep -Fq 'permissions:' .github/workflows/ci.yml
 grep -Fq 'contents: read' .github/workflows/ci.yml
 grep -Fq 'make clean && make verify && make clean' .github/workflows/ci.yml
 
+ruby <<'RUBY'
+require 'yaml'
+
+def assert_contract(condition, message)
+  return if condition
+
+  warn "FAIL: #{message}"
+  exit 1
+end
+
+workflow_path = '.github/workflows/release.yml'
+workflow_source = File.read(workflow_path)
+workflow = YAML.load_file(workflow_path)
+triggers = workflow['on'] || workflow[true]
+assert_contract(triggers.is_a?(Hash), 'release workflow triggers must be a mapping')
+assert_contract(
+  triggers.key?('workflow_dispatch') && triggers['workflow_dispatch'].nil?,
+  'release workflow must have an empty workflow_dispatch trigger'
+)
+push = triggers['push']
+assert_contract(
+  push.is_a?(Hash) && push['tags'] == ['v[0-9]+.[0-9]+.[0-9]+'],
+  'release workflow must trigger on semantic version tags'
+)
+assert_contract(
+  workflow['permissions'].is_a?(Hash) && workflow['permissions']['contents'] == 'read',
+  'release workflow top-level contents permission must be read'
+)
+
+jobs = workflow['jobs']
+verify_job = jobs.is_a?(Hash) ? jobs['verify'] : nil
+assert_contract(verify_job.is_a?(Hash), 'release workflow is missing the verify job')
+verify_steps = verify_job['steps']
+assert_contract(verify_steps.is_a?(Array), 'release verify steps must be a list')
+assert_contract(verify_steps.all? { |step| step.is_a?(Hash) }, 'release verify steps must be mappings')
+assert_contract(
+  verify_steps.map { |step| step['name'] } == ['Check out source', 'Set up Go', 'Validate release tag', 'Verify'],
+  'release verify job must contain only checkout, Go setup, tag validation, and verification'
+)
+checkout_step, setup_go_step = verify_steps
+assert_contract(
+  checkout_step['uses'] == 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' &&
+    checkout_step['with'].is_a?(Hash) && checkout_step['with']['fetch-depth'] == 0,
+  'release checkout step must stay pinned and fetch tags'
+)
+assert_contract(
+  setup_go_step['uses'] == 'actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16' &&
+    setup_go_step['with'].is_a?(Hash) && setup_go_step['with']['go-version'] == '1.26.2' &&
+    setup_go_step['with']['cache-dependency-path'] == 'cli/go.sum',
+  'release Go setup step must stay pinned to Go 1.26.2'
+)
+validate_steps = verify_steps.select { |step| step['name'] == 'Validate release tag' }
+assert_contract(validate_steps.length == 1, 'release workflow must have one Validate release tag step')
+validate_step = validate_steps.fetch(0)
+assert_contract(
+  validate_step['if'] == "github.event_name == 'push'",
+  'release tag validation must run only for tag pushes'
+)
+validate_lines = validate_step['run'].to_s.lines.map(&:strip)
+strict_tag_check = '[[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]'
+assert_contract(
+  validate_lines == [
+    'version="${GITHUB_REF_NAME#v}"',
+    strict_tag_check,
+    'git tag --points-at HEAD | grep -Fxq "$GITHUB_REF_NAME"'
+  ],
+  'release tag validation must strictly validate the version and tag target'
+)
+gate_steps = verify_steps.select { |step| step['name'] == 'Verify' }
+assert_contract(
+  gate_steps.length == 1 && gate_steps.fetch(0)['run'].to_s.strip == 'make clean && make verify && make clean',
+  'release verify step must run the complete gate'
+)
+
+publish_job = jobs['publish']
+assert_contract(publish_job.is_a?(Hash), 'release workflow is missing the publish job')
+assert_contract(
+  publish_job['if'] == "github.event_name == 'push'",
+  'release publish job must run only for tag pushes'
+)
+assert_contract(publish_job['needs'] == 'verify', 'release publish job must need verify')
+assert_contract(
+  publish_job['permissions'].is_a?(Hash) && publish_job['permissions']['contents'] == 'write',
+  'release publish job contents permission must be write'
+)
+publish_steps = publish_job['steps']
+assert_contract(publish_steps.is_a?(Array), 'release publish steps must be a list')
+assert_contract(publish_steps.all? { |step| step.is_a?(Hash) }, 'release publish steps must be mappings')
+assert_contract(
+  publish_steps.length == 1 && publish_steps.none? { |step| step.key?('uses') },
+  'release publish job must contain only the source release command and use no actions'
+)
+source_release_steps = publish_steps.select { |step| step['name'] == 'Publish source release' }
+assert_contract(
+  source_release_steps.length == 1,
+  'release publish job must have one Publish source release step'
+)
+source_release_step = source_release_steps.fetch(0)
+assert_contract(
+  source_release_step['env'].is_a?(Hash) && source_release_step['env']['GH_TOKEN'] == '${{ github.token }}',
+  'source release GH_TOKEN must use github.token'
+)
+expected_release_command = 'gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes --title "AppPilot $GITHUB_REF_NAME"'
+actual_release_command = source_release_step['run'].to_s.split.join(' ')
+assert_contract(
+  actual_release_command == expected_release_command,
+  'source release command must not upload binary attachments or accept extra arguments'
+)
+assert_contract(
+  !workflow_source.match?(/Build release archives|GOARCH=|dist\/|SHA256SUMS|actions\/upload-artifact|gh release upload|\.tar\.gz/),
+  'source-only workflow still packages binaries'
+)
+
+readme = File.read('README.md')
+english_anchor = '<a id="readme-english"></a>'
+chinese_anchor = '<a id="readme-中文"></a>'
+english_start = readme.index(english_anchor)
+chinese_start = readme.index(chinese_anchor)
+assert_contract(
+  readme.scan(english_anchor).length == 1 && readme.scan(chinese_anchor).length == 1 &&
+    english_start && chinese_start && english_start < chinese_start,
+  'README language anchors are missing or out of order'
+)
+english = readme[english_start...chinese_start]
+chinese = readme[chinese_start..]
+tagged_clone = 'git clone --branch v0.1.0 --depth 1 https://github.com/ggyy0515/AppPilot.git'
+assert_contract(readme.scan(tagged_clone).length == 2, 'README must contain exactly two tagged clone commands')
+assert_contract(english.scan(tagged_clone).length == 1, 'English install must use the tagged clone command')
+assert_contract(chinese.scan(tagged_clone).length == 1, 'Chinese install must use the tagged clone command')
+assert_contract(english.include?('source-only'), 'English README must describe the source-only release')
+assert_contract(chinese.include?('仅以源码形式发布'), 'Chinese README must describe the source-only release')
+RUBY
+
+failed=0
+if ! grep -Fq 'workflow_dispatch' docs/releasing.md; then
+  echo 'FAIL: release guide does not document the manual workflow dry run' >&2
+  failed=1
+fi
+if ! grep -Fq 'clean temporary directory' docs/releasing.md; then
+  echo 'FAIL: release guide does not require a clean temporary directory' >&2
+  failed=1
+fi
+((failed == 0)) || exit 1
+
 echo 'PASS: open-source-readiness'

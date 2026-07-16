@@ -30,12 +30,14 @@ AppPilot is a Debug-only iOS development and diagnostics loop. The `ap-ios-debug
 
 ```bash
 set -euo pipefail
-git clone https://github.com/ggyy0515/AppPilot.git
+git clone --branch v0.1.0 --depth 1 https://github.com/ggyy0515/AppPilot.git
 cd AppPilot
 make verify
 make install-local
 command -v ap-ios-debug
 ```
+
+AppPilot 0.1.0 is a source-only release. Building from the tagged repository is the supported installation path because the CLI, Swift Debug Kit, Codex skill, Demo, and installation checks must stay on the same version. AppPilot does not distribute unsigned prebuilt macOS binaries.
 
 The installation transaction owns `~/.local/bin/ap-ios-debug`, `~/.local/share/ap-ios-debug/ap-ios-debug-kit`, and `~/.codex/skills/ap-ios-debug-skill`. During `make install-local`, it also retires exactly the three predecessor global destinations enumerated in `scripts/local-install.sh`; it does not search for or delete project data. Add `~/.local/bin` to `PATH` if `command -v ap-ios-debug` is empty. Remove the current installed copies with `make uninstall-local`.
 
@@ -247,12 +249,14 @@ AppPilot 是一个仅用于 Debug 构建的 iOS 开发与诊断闭环。`ap-ios-
 
 ```bash
 set -euo pipefail
-git clone https://github.com/ggyy0515/AppPilot.git
+git clone --branch v0.1.0 --depth 1 https://github.com/ggyy0515/AppPilot.git
 cd AppPilot
 make verify
 make install-local
 command -v ap-ios-debug
 ```
+
+AppPilot 0.1.0 仅以源码形式发布。受支持的安装方式是从对应 tag 的仓库源码构建，因为 CLI、Swift Debug Kit、Codex skill、Demo 和安装检查必须保持同一版本。AppPilot 不分发未经签名的预构建 macOS 二进制文件。
 
 安装事务管理当前的 `~/.local/bin/ap-ios-debug`、`~/.local/share/ap-ios-debug/ap-ios-debug-kit` 和 `~/.codex/skills/ap-ios-debug-skill`。执行 `make install-local` 时，它还会精确退役 `scripts/local-install.sh` 中列出的三个前代全局目标路径；不会搜索或删除项目数据。若找不到命令，请将 `~/.local/bin` 加入 `PATH`；使用 `make uninstall-local` 移除当前安装副本。
 
