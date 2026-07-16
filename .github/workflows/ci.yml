@@ -33,5 +33,7 @@ jobs:
           go version
           swift --version
           xcodebuild -version
+      - name: Install ripgrep
+        run: brew install ripgrep
       - name: Verify
         run: make clean && make verify && make clean

@@ -45,6 +45,7 @@ The installation transaction owns `~/.local/bin/ap-ios-debug`, `~/.local/share/a
 
 - a current Go toolchain available on `PATH`;
 - a current Xcode selected by `xcode-select`;
+- `ripgrep` (`rg`) available on `PATH`, as required by the validation scripts (for example, installed with Homebrew);
 - an unlocked, trusted physical device with Developer Mode enabled;
 - a valid Development Team and provisioning setup for the target App;
 - one explicitly selected device when several devices are connected;
@@ -264,6 +265,7 @@ AppPilot 0.1.0 仅以源码形式发布。受支持的安装方式是从对应 t
 
 - 当前 Go 工具链已在 `PATH` 中可用；
 - 已通过 `xcode-select` 选择当前 Xcode；
+- 验证脚本所需的 `ripgrep`（`rg`）已在 `PATH` 中可用（例如通过 Homebrew 安装）；
 - 真机已解锁、信任当前 Mac 并开启开发者模式；
 - 目标 App 具备有效的 Development Team 与描述文件；
 - 连接多台设备时必须明确选择唯一目标；

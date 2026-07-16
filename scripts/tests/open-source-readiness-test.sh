@@ -83,6 +83,28 @@ def assert_contract(condition, message)
   exit 1
 end
 
+def assert_ripgrep_install_before_verify(steps, workflow_name)
+  install_indices = steps.each_index.select { |index| steps[index]['name'] == 'Install ripgrep' }
+  verify_indices = steps.each_index.select { |index| steps[index]['name'] == 'Verify' }
+  assert_contract(
+    install_indices.length == 1 && steps.fetch(install_indices.fetch(0))['run'] == 'brew install ripgrep',
+    "#{workflow_name} workflow must install ripgrep with the exact Homebrew command"
+  )
+  assert_contract(
+    verify_indices.length == 1 && install_indices.fetch(0) < verify_indices.fetch(0),
+    "#{workflow_name} workflow must install ripgrep before Verify"
+  )
+end
+
+ci_workflow = YAML.load_file('.github/workflows/ci.yml')
+ci_jobs = ci_workflow['jobs']
+ci_verify_job = ci_jobs.is_a?(Hash) ? ci_jobs['verify'] : nil
+assert_contract(ci_verify_job.is_a?(Hash), 'CI workflow is missing the verify job')
+ci_verify_steps = ci_verify_job['steps']
+assert_contract(ci_verify_steps.is_a?(Array), 'CI verify steps must be a list')
+assert_contract(ci_verify_steps.all? { |step| step.is_a?(Hash) }, 'CI verify steps must be mappings')
+assert_ripgrep_install_before_verify(ci_verify_steps, 'CI')
+
 workflow_path = '.github/workflows/release.yml'
 workflow_source = File.read(workflow_path)
 workflow = YAML.load_file(workflow_path)
@@ -109,8 +131,8 @@ verify_steps = verify_job['steps']
 assert_contract(verify_steps.is_a?(Array), 'release verify steps must be a list')
 assert_contract(verify_steps.all? { |step| step.is_a?(Hash) }, 'release verify steps must be mappings')
 assert_contract(
-  verify_steps.map { |step| step['name'] } == ['Check out source', 'Set up Go', 'Validate release tag', 'Verify'],
-  'release verify job must contain only checkout, Go setup, tag validation, and verification'
+  verify_steps.map { |step| step['name'] } == ['Check out source', 'Set up Go', 'Install ripgrep', 'Validate release tag', 'Verify'],
+  'release verify job must contain only checkout, Go setup, ripgrep install, tag validation, and verification'
 )
 checkout_step, setup_go_step = verify_steps
 assert_contract(
@@ -124,6 +146,7 @@ assert_contract(
     setup_go_step['with']['cache-dependency-path'] == 'cli/go.sum',
   'release Go setup step must stay pinned to Go 1.26.2'
 )
+assert_ripgrep_install_before_verify(verify_steps, 'release')
 validate_steps = verify_steps.select { |step| step['name'] == 'Validate release tag' }
 assert_contract(validate_steps.length == 1, 'release workflow must have one Validate release tag step')
 validate_step = validate_steps.fetch(0)
@@ -198,6 +221,16 @@ assert_contract(
 )
 english = readme[english_start...chinese_start]
 chinese = readme[chinese_start..]
+english_prerequisites = english[/^### Prerequisites\s*$\n(.*?)(?=^### )/m, 1]
+chinese_prerequisites = chinese[/^### 前置条件\s*$\n(.*?)(?=^### )/m, 1]
+assert_contract(
+  english_prerequisites&.match?(/ripgrep.*`rg`.*`PATH`/i),
+  'English prerequisites must require ripgrep (rg) on PATH'
+)
+assert_contract(
+  chinese_prerequisites&.match?(/ripgrep.*`rg`.*`PATH`/i),
+  'Chinese prerequisites must require ripgrep (rg) on PATH'
+)
 tagged_clone = 'git clone --branch v0.1.0 --depth 1 https://github.com/ggyy0515/AppPilot.git'
 assert_contract(readme.scan(tagged_clone).length == 2, 'README must contain exactly two tagged clone commands')
 assert_contract(english.scan(tagged_clone).length == 1, 'English install must use the tagged clone command')
