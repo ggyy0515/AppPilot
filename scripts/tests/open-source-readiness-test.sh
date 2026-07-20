@@ -298,6 +298,14 @@ if ! grep -Fq 'clean temporary directory' docs/releasing.md; then
   echo 'FAIL: release guide does not require a clean temporary directory' >&2
   failed=1
 fi
+if ! grep -Fq '## 0.1.0 - 2026-07-20' CHANGELOG.md; then
+  echo 'FAIL: changelog does not contain the dated 0.1.0 release' >&2
+  failed=1
+fi
+if grep -Fq '## 0.1.0 - Planned' CHANGELOG.md; then
+  echo 'FAIL: changelog still marks 0.1.0 as planned' >&2
+  failed=1
+fi
 ((failed == 0)) || exit 1
 
 echo 'PASS: open-source-readiness'
