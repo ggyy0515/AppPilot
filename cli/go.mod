@@ -29,5 +29,5 @@ require (
 	golang.org/x/tools v0.44.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	howett.net/plist v1.0.1 // indirect
-	software.sslmate.com/src/go-pkcs12 v0.7.0 // indirect
+	software.sslmate.com/src/go-pkcs12 v0.7.2 // indirect
 )
